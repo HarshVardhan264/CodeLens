@@ -1,8 +1,12 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
 const User = require("../models/User");
 const RevokedToken = require("../models/RevokedToken");
 
+// ============================================================
+// GENERATE JWT
+// ============================================================
 
 const generateToken = (userId) => {
     return jwt.sign(
@@ -16,13 +20,31 @@ const generateToken = (userId) => {
     );
 };
 
-// ===============================
+// ============================================================
+// FORMAT USER
+// Keeps signup/login/getMe responses consistent
+// ============================================================
+
+const formatUser = (user) => {
+    return {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        plan: user.plan,
+        reviewsUsed: user.reviewsUsed,
+        planActivatedAt: user.planActivatedAt || null,
+    };
+};
+
+// ============================================================
 // SIGNUP
-// ===============================
+// ============================================================
+
 const signup = async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
+        // Validate required fields
         if (!name || !email || !password) {
             return res.status(400).json({
                 success: false,
@@ -30,16 +52,18 @@ const signup = async (req, res) => {
             });
         }
 
+        // Validate password
         if (password.length < 6) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "Password must contain at least 6 characters",
+                message: "Password must contain at least 6 characters",
             });
         }
 
+        // Normalize email
         const normalizedEmail = email.toLowerCase().trim();
 
+        // Check existing user
         const existingUser = await User.findOne({
             email: normalizedEmail,
         });
@@ -47,16 +71,14 @@ const signup = async (req, res) => {
         if (existingUser) {
             return res.status(409).json({
                 success: false,
-                message:
-                    "An account with this email already exists",
+                message: "An account with this email already exists",
             });
         }
 
-        const hashedPassword = await bcrypt.hash(
-            password,
-            12
-        );
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 12);
 
+        // Create user
         const user = await User.create({
             name: name.trim(),
             email: normalizedEmail,
@@ -65,8 +87,14 @@ const signup = async (req, res) => {
             // CodeLens free plan
             plan: "free",
             reviewsUsed: 0,
+
+            // Payment fields
+            razorpayOrderId: null,
+            razorpayPaymentId: null,
+            planActivatedAt: null,
         });
 
+        // Generate JWT
         const token = generateToken(user._id);
 
         return res.status(201).json({
@@ -75,15 +103,8 @@ const signup = async (req, res) => {
 
             token,
 
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                plan: user.plan,
-                reviewsUsed: user.reviewsUsed,
-            },
+            user: formatUser(user),
         });
-
     } catch (error) {
         console.error("Signup error:", error);
 
@@ -94,23 +115,26 @@ const signup = async (req, res) => {
     }
 };
 
-// ===============================
+// ============================================================
 // LOGIN
-// ===============================
+// ============================================================
+
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        // Validate fields
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
-                message:
-                    "Email and password are required",
+                message: "Email and password are required",
             });
         }
 
+        // Normalize email
         const normalizedEmail = email.toLowerCase().trim();
 
+        // Find user
         const user = await User.findOne({
             email: normalizedEmail,
         });
@@ -122,6 +146,7 @@ const login = async (req, res) => {
             });
         }
 
+        // Compare password
         const isMatch = await bcrypt.compare(
             password,
             user.password
@@ -134,6 +159,7 @@ const login = async (req, res) => {
             });
         }
 
+        // Generate JWT
         const token = generateToken(user._id);
 
         return res.json({
@@ -142,15 +168,8 @@ const login = async (req, res) => {
 
             token,
 
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                plan: user.plan,
-                reviewsUsed: user.reviewsUsed,
-            },
+            user: formatUser(user),
         });
-
     } catch (error) {
         console.error("Login error:", error);
 
@@ -161,21 +180,15 @@ const login = async (req, res) => {
     }
 };
 
-// ===============================
+// ============================================================
 // CURRENT USER
-// ===============================
+// ============================================================
+
 const getMe = async (req, res) => {
     try {
         return res.json({
             success: true,
-
-            user: {
-                id: req.user._id,
-                name: req.user.name,
-                email: req.user.email,
-                plan: req.user.plan,
-                reviewsUsed: req.user.reviewsUsed,
-            },
+            user: formatUser(req.user),
         });
     } catch (error) {
         console.error("Get user error:", error);
@@ -187,43 +200,66 @@ const getMe = async (req, res) => {
     }
 };
 
+// ============================================================
+// LOGOUT
+// ============================================================
+
 const logout = async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization;
+    try {
+        const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(400).json({
-        success: false,
-        message: "Authentication token missing",
-      });
+        if (
+            !authHeader ||
+            !authHeader.startsWith("Bearer ")
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Authentication token missing",
+            });
+        }
+
+        const token = authHeader.split(" ")[1];
+
+        if (!token) {
+            return res.status(400).json({
+                success: false,
+                message: "Authentication token missing",
+            });
+        }
+
+        // Verify token before revoking it
+        const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET
+        );
+
+        // Store token in revoked-token collection
+        await RevokedToken.create({
+            token,
+            expiresAt: new Date(decoded.exp * 1000),
+        });
+
+        return res.json({
+            success: true,
+            message: "Logged out successfully",
+        });
+    } catch (error) {
+        console.error("Logout error:", error.message);
+
+        return res.status(400).json({
+            success: false,
+            message: "Invalid or expired token",
+        });
     }
-
-    const token = authHeader.split(" ")[1];
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    await RevokedToken.create({
-      token,
-      expiresAt: new Date(decoded.exp * 1000),
-    });
-
-    return res.json({
-      success: true,
-      message: "Logged out successfully",
-    });
-  } catch (error) {
-    console.error("Logout error:", error.message);
-
-    return res.status(400).json({
-      success: false,
-      message: "Invalid or expired token",
-    });
-  }
 };
 
+// ============================================================
+// EXPORTS
+// ============================================================
+
 module.exports = {
-  signup,
-  login,
-  getMe,
-  logout,
+    signup,
+    login,
+    getMe,
+    logout,
 };

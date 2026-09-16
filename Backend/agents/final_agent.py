@@ -5,7 +5,7 @@ import json
 load_dotenv()
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-3.6-flash",
+    model="gemini-2.5-flash",
     temperature=0
 )
 
@@ -31,7 +31,7 @@ Responsibilities:
 4. Prioritize serious issues.
 5. Calculate a code health score from 0 to 100.
 6. Give a short repository summary.
-7. Give practical recommendations.
+7. Give 3 to 5 practical, prioritized recommendations based only on the identified issues.
 
 Return ONLY valid JSON.
 

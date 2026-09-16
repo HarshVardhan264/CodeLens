@@ -31,6 +31,21 @@ const userSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+
+        razorpayOrderId: {
+            type: String,
+            default: null,
+        },
+
+        razorpayPaymentId: {
+            type: String,
+            default: null,
+        },
+
+        planActivatedAt: {
+            type: Date,
+            default: null,
+        },
     },
     {
         timestamps: true,

@@ -6,6 +6,7 @@ import About from "./Pages/About";
 import Login from "./Pages/Login"
 import Signup from "./Pages/Signup";
 import Contact from "./Pages/Contact";
+import Pricing from "./Pages/Pricing";
 
 function App() {
     return (
@@ -39,6 +40,11 @@ function App() {
             <Route
                 path="/contact"
                 element={<Contact />}
+            />
+
+            <Route
+                path="/pricing"
+                element={<Pricing />}
             />
 
         </Routes>

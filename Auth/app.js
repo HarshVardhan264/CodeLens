@@ -1,12 +1,15 @@
 const express = require("express");
 const cors = require("cors");
-const mongoose = require("mongoose");
 require("dotenv").config();
 
+const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 const app = express();
+
+connectDB();
 
 app.use(
     cors({
@@ -17,15 +20,6 @@ app.use(
 
 app.use(express.json());
 
-mongoose
-    .connect(process.env.MONGO_URI)
-    .then(() => {
-        console.log("MongoDB connected");
-    })
-    .catch((error) => {
-        console.error("MongoDB connection failed:", error.message);
-    });
-
 app.get("/", (req, res) => {
     res.json({
         success: true,
@@ -35,6 +29,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/review", reviewRoutes);
+app.use("/api/payment", paymentRoutes);
 
 const PORT = process.env.PORT || 5000;
 

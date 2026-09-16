@@ -81,16 +81,16 @@ const Footer = () => {
               Review a repo
             </Link>
 
-            <a href="#reads" className="cl-foot__link cl-rule">
-              What it reads
-            </a>
-
-            <a href="#process" className="cl-foot__link cl-rule">
-              Process
-            </a>
-
             <Link to="/about" className="cl-foot__link cl-rule">
               About
+            </Link>
+
+            <Link to="/contact" className="cl-foot__link cl-rule">
+              Contact
+            </Link>
+
+            <Link to="/pricing" className="cl-foot__link cl-rule">
+              Price
             </Link>
           </div>
         </nav>

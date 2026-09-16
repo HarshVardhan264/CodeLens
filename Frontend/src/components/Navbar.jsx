@@ -639,21 +639,6 @@ const Navbar = () => {
               ${topVisibility}
             `}
           >
-            <a
-              href="#reads"
-              className="
-                text-[14px]
-                font-medium
-                tracking-[-0.02em]
-                !text-[#eeeae1]
-                no-underline
-                transition-opacity
-                duration-300
-                hover:opacity-60
-              "
-            >
-              What it reads
-            </a>
 
             
 
@@ -686,6 +671,21 @@ const Navbar = () => {
               "
             >
               Contact
+            </Link>
+            <Link
+              to="/pricing"
+              className="
+                text-[14px]
+                font-medium
+                tracking-[-0.02em]
+                !text-[#eeeae1]
+                no-underline
+                transition-opacity
+                duration-300
+                hover:opacity-60
+              "
+            >
+              Price
             </Link>
           </nav>
 
@@ -1217,33 +1217,7 @@ const Navbar = () => {
         ================================================= */}
 
         <nav className="mt-auto flex flex-col pb-12">
-
-          {/* WHAT IT READS */}
-
-          <a
-            ref={(el) => {
-              menuItemsRef.current[0] = el;
-            }}
-            href="#reads"
-            onClick={() =>
-              setMenuOpen(false)
-            }
-            className="
-              border-b
-              border-[#eeeae1]/20
-              py-5
-              text-[32px]
-              font-medium
-              tracking-[-0.05em]
-              !text-[#eeeae1]
-              no-underline
-              transition-all
-              duration-300
-              hover:pl-2
-            "
-          >
-            What it reads
-          </a>
+          
 
           
 
@@ -1299,6 +1273,30 @@ const Navbar = () => {
             "
           >
             Contact
+          </Link>
+          <Link
+            ref={(el) => {
+              menuItemsRef.current[0] = el;
+            }}
+            to="/price"
+            onClick={() =>
+              setMenuOpen(false)
+            }
+            className="
+              border-b
+              border-[#eeeae1]/20
+              py-5
+              text-[32px]
+              font-medium
+              tracking-[-0.05em]
+              !text-[#eeeae1]
+              no-underline
+              transition-all
+              duration-300
+              hover:pl-2
+            "
+          >
+            Price
           </Link>
 
           {/* REVIEW A REPO */}

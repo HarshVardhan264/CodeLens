@@ -5,12 +5,18 @@ const reviewRepository = require("../services/codeReviewService");
 
 const FREE_REVIEW_LIMIT = 4;
 
-// ===============================
+
+// ============================================================
 // CREATE REVIEW
-// ===============================
+// ============================================================
+
 const createReview = async (req, res) => {
     try {
         const { repoUrl } = req.body;
+
+        // --------------------------------------------------------
+        // Validate repository URL
+        // --------------------------------------------------------
 
         if (!repoUrl || !repoUrl.trim()) {
             return res.status(400).json({
@@ -18,6 +24,12 @@ const createReview = async (req, res) => {
                 message: "Repository URL is required",
             });
         }
+
+        const cleanRepoUrl = repoUrl.trim();
+
+        // --------------------------------------------------------
+        // Get authenticated user
+        // --------------------------------------------------------
 
         const user = await User.findById(req.user._id);
 
@@ -28,37 +40,86 @@ const createReview = async (req, res) => {
             });
         }
 
-        // Check free review limit
+        // --------------------------------------------------------
+        // Check Free plan limit
+        //
+        // Free users:
+        //     4 reviews maximum
+        //
+        // Pro users:
+        //     Unlimited reviews
+        // --------------------------------------------------------
+
         if (
             user.plan === "free" &&
             user.reviewsUsed >= FREE_REVIEW_LIMIT
         ) {
-            return res.status(402).json({
+            return res.status(403).json({
                 success: false,
                 code: "REVIEW_LIMIT_REACHED",
                 message:
                     "You have used all 4 free repository reviews.",
-                reviewsUsed: user.reviewsUsed,
-                limit: FREE_REVIEW_LIMIT,
+                usage: {
+                    used: user.reviewsUsed,
+                    limit: FREE_REVIEW_LIMIT,
+                    plan: user.plan,
+                },
             });
         }
 
+        // --------------------------------------------------------
         // Run CodeLens AI review
-        const result = await reviewRepository(repoUrl.trim());
+        // --------------------------------------------------------
 
-        // Save review
+        console.log(
+            `Starting review for user: ${user.email}`
+        );
+
+        const result = await reviewRepository(cleanRepoUrl);
+
+        // --------------------------------------------------------
+        // Validate AI result
+        // --------------------------------------------------------
+
+        if (!result || !result.report) {
+            console.error(
+                "Invalid review result:",
+                result
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "The AI review returned an invalid result.",
+            });
+        }
+
+        // --------------------------------------------------------
+        // Save completed review
+        // --------------------------------------------------------
+
         const review = await Review.create({
             user: user._id,
-            repoUrl: repoUrl.trim(),
+            repoUrl: cleanRepoUrl,
             result,
             status: "completed",
         });
 
-        // Increase usage
+        // --------------------------------------------------------
+        // Increase Free usage
+        //
+        // IMPORTANT:
+        // Pro users do NOT consume review credits.
+        // --------------------------------------------------------
+
         if (user.plan === "free") {
             user.reviewsUsed += 1;
             await user.save();
         }
+
+        // --------------------------------------------------------
+        // Response
+        // --------------------------------------------------------
 
         return res.status(201).json({
             success: true,
@@ -71,10 +132,12 @@ const createReview = async (req, res) => {
 
             usage: {
                 used: user.reviewsUsed,
+
                 limit:
                     user.plan === "free"
                         ? FREE_REVIEW_LIMIT
                         : null,
+
                 plan: user.plan,
             },
         });
@@ -90,9 +153,11 @@ const createReview = async (req, res) => {
     }
 };
 
-// ===============================
+
+// ============================================================
 // REVIEW HISTORY
-// ===============================
+// ============================================================
+
 const getReviewHistory = async (req, res) => {
     try {
         const reviews = await Review.find({
@@ -116,9 +181,11 @@ const getReviewHistory = async (req, res) => {
     }
 };
 
-// ===============================
+
+// ============================================================
 // SINGLE REVIEW
-// ===============================
+// ============================================================
+
 const getReviewById = async (req, res) => {
     try {
         const review = await Review.findOne({
@@ -147,6 +214,11 @@ const getReviewById = async (req, res) => {
         });
     }
 };
+
+
+// ============================================================
+// EXPORTS
+// ============================================================
 
 module.exports = {
     createReview,

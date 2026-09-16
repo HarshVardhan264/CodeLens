@@ -16,6 +16,7 @@ body {
   
 }
 
+
 * {
   box-sizing: border-box;
 }
@@ -77,3 +78,4 @@ body {
     transform: scale(1);
   }
 }
+
