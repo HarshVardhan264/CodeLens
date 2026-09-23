@@ -148,7 +148,7 @@ async function reviewRepository(repoUrl) {
     );
 
 
-    // 6. Return result expected by Review.jsx
+    // 6. Return complete review result
 
     return {
 
@@ -160,6 +160,10 @@ async function reviewRepository(repoUrl) {
 
         report:
             aiResult.report || aiResult,
+
+        // Critical issues selected by Python prioritizer
+        githubCandidates:
+            aiResult.github_candidates || [],
     };
 }
 

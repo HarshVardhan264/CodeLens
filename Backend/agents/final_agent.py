@@ -19,19 +19,36 @@ def final_agent(
     prompt = f"""
 You are the Final Code Review Agent.
 
-You receive findings from three specialized agents.
+You receive findings from three specialized code review agents:
 
-Your job is to combine them into ONE repository-level report.
+1. Bug Agent
+2. Security Agent
+3. Quality Agent
+
+Your job is to combine their findings into ONE repository-level code review report.
 
 Responsibilities:
 
-1. Remove duplicate issues.
-2. Preserve the correct file path.
-3. Preserve the correct line number.
-4. Prioritize serious issues.
-5. Calculate a code health score from 0 to 100.
-6. Give a short repository summary.
-7. Give 3 to 5 practical, prioritized recommendations based only on the identified issues.
+1. Combine findings from all three agents.
+2. Remove duplicate issues.
+3. Preserve the correct file path.
+4. Preserve the correct line number.
+5. Assign the appropriate severity to every issue.
+6. Assign a confidence score to every issue.
+7. Assign a priority score to every issue.
+8. Calculate an overall code health score from 0 to 100.
+9. Give a short repository summary.
+10. Give 3 to 5 practical recommendations based only on the identified issues.
+
+IMPORTANT:
+
+The report must contain ALL valid issues found by the specialized agents.
+
+Do NOT remove High, Medium, or Low severity issues just because they are not Critical.
+
+The complete list of issues will be shown to the developer in the CodeLens report.
+
+A separate system will later select the most important Critical issues for possible GitHub Issue creation.
 
 Return ONLY valid JSON.
 
@@ -39,6 +56,7 @@ Use EXACTLY this structure:
 
 {{
     "score": 75,
+
     "summary": "Short repository summary",
 
     "issueCounts": {{
@@ -56,7 +74,9 @@ Use EXACTLY this structure:
             "severity": "High",
             "title": "Example issue",
             "description": "Description of the issue.",
-            "suggestedFix": "Suggested fix."
+            "suggestedFix": "Suggested fix.",
+            "confidence": 90,
+            "priorityScore": 85
         }}
     ],
 
@@ -66,16 +86,45 @@ Use EXACTLY this structure:
     ]
 }}
 
-Rules:
+RULES:
 
 - score must be an integer from 0 to 100.
-- severity must be Critical, High, Medium, or Low.
-- category must be Bug, Security, or Quality.
+- severity must be exactly one of:
+  - Critical
+  - High
+  - Medium
+  - Low
+- category must be exactly one of:
+  - Bug
+  - Security
+  - Quality
 - line must be an integer.
+- confidence must be an integer from 0 to 100.
+- priorityScore must be an integer from 0 to 100.
 - Do not invent issues.
-- Only use findings provided by the specialized agents.
-- If no issues exist, use an empty issues array.
+- Only use issues supported by the findings provided by the specialized agents.
+- Do not invent files, line numbers, vulnerabilities, or evidence.
+- Preserve the original file path whenever available.
+- Preserve the original line number whenever available.
+- If a line number is genuinely unavailable, use 0.
+- Remove duplicate issues that refer to the same underlying problem.
+- Keep distinct issues even if they occur in the same file.
+- Include ALL valid issues from the specialized agents.
+- Do not hide Medium or Low severity issues.
 - issueCounts must exactly match the issues array.
+- Critical issues should generally have a higher priorityScore than High, Medium, or Low issues.
+- priorityScore should consider:
+    1. Severity
+    2. Confidence
+    3. Potential impact
+    4. Exploitability
+    5. How actionable the issue is
+- confidence represents how confident you are that the issue is actually present in the code.
+- priorityScore represents how important and actionable the issue is for the developer.
+- A high confidence issue does not automatically mean it has high priority.
+- A Critical issue with low confidence should not automatically receive a maximum priorityScore.
+- Recommendations must be based only on the identified issues.
+- Do not create recommendations for problems that were not identified.
 - Do not use markdown.
 - Do not wrap the JSON in ```.
 
@@ -101,14 +150,20 @@ QUALITY FINDINGS:
     content = response.content
 
     if isinstance(content, list):
+
         text_parts = []
 
         for item in content:
+
             if isinstance(item, dict):
+
                 text = item.get("text", "")
+
                 if text:
                     text_parts.append(text)
+
             elif isinstance(item, str):
+
                 text_parts.append(item)
 
         content = "".join(text_parts)
@@ -117,25 +172,34 @@ QUALITY FINDINGS:
 
     # Remove markdown code fences if Gemini adds them
     if content.startswith("```"):
+
         content = content.replace("```json", "")
         content = content.replace("```", "")
         content = content.strip()
 
     try:
-        return json.loads(content)
+
+        result = json.loads(content)
+
+        return result
 
     except json.JSONDecodeError:
 
         return {
             "score": 0,
+
             "summary": "The final AI response could not be parsed.",
+
             "issueCounts": {
                 "critical": 0,
                 "high": 0,
                 "medium": 0,
                 "low": 0
             },
+
             "issues": [],
+
             "recommendations": [],
+
             "error": "Invalid JSON returned by final agent"
         }

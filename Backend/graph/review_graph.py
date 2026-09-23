@@ -7,6 +7,8 @@ from agents.security_agent import security_agent
 from agents.quality_agent import quality_agent
 from agents.final_agent import final_agent
 
+from graph.prioritizer import select_github_candidates
+
 
 def run_bug_agent(state: ReviewState):
 
@@ -48,23 +50,40 @@ def run_final_agent(state: ReviewState):
     }
 
 
+def run_prioritizer(state: ReviewState):
+
+    candidates = select_github_candidates(
+        state["final_report"]
+    )
+
+    return {
+        "github_candidates": candidates
+    }
+
+
 graph = StateGraph(ReviewState)
+
 
 graph.add_node("bug_agent", run_bug_agent)
 graph.add_node("security_agent", run_security_agent)
 graph.add_node("quality_agent", run_quality_agent)
 graph.add_node("final_agent", run_final_agent)
+graph.add_node("prioritize_findings", run_prioritizer)
 
 
 graph.add_edge(START, "bug_agent")
 graph.add_edge(START, "security_agent")
 graph.add_edge(START, "quality_agent")
 
+
 graph.add_edge("bug_agent", "final_agent")
 graph.add_edge("security_agent", "final_agent")
 graph.add_edge("quality_agent", "final_agent")
 
-graph.add_edge("final_agent", END)
+
+graph.add_edge("final_agent", "prioritize_findings")
+
+graph.add_edge("prioritize_findings", END)
 
 
 review_graph = graph.compile()

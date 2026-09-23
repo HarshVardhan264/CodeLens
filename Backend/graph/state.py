@@ -9,4 +9,8 @@ class ReviewState(TypedDict):
     security_results: str
     quality_results: str
 
+    # Complete repository report containing ALL issues
     final_report: Dict[str, Any]
+
+    # Critical issues selected for possible GitHub Issue creation
+    github_candidates: List[Dict[str, Any]]

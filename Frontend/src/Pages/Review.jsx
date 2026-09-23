@@ -182,6 +182,17 @@ const Review = () => {
     const [upgradePopup, setUpgradePopup] = useState(false);
 
     // ==========================================================
+    // GITHUB ISSUES POPUP
+    // ==========================================================
+
+    const [reviewId, setReviewId] = useState(null);
+    const [githubPopup, setGithubPopup] = useState(false);
+    const [githubCreating, setGithubCreating] = useState(false);
+    const [githubIssuesCreated, setGithubIssuesCreated] = useState(false);
+    const [githubCreatedIssues, setGithubCreatedIssues] = useState([]);
+    const githubIssuesRef = useRef(null);
+
+    // ==========================================================
     // GET TOKEN
     // ==========================================================
 
@@ -531,9 +542,35 @@ const Review = () => {
                 // SAVE RESULT
                 // ======================================================
 
-                setResult(
-                    response.data.result
+                const reviewResult = response.data.result;
+                const currentReviewId = response.data.reviewId;
+
+                setReviewId(currentReviewId);
+                setGithubIssuesCreated(false);
+                setGithubCreatedIssues([]);
+
+                console.log("========== REVIEW RESPONSE ==========");
+                console.log("Full response:", response.data);
+                console.log("Review result:", reviewResult);
+                console.log(
+                    "GitHub candidates:",
+                    reviewResult?.githubCandidates
                 );
+                console.log("====================================");
+
+                setResult(reviewResult);
+
+                // Show GitHub Issues popup when critical candidates exist
+                const githubCandidates =
+                    response.data?.githubCandidates ||
+                    response.data?.github_candidates ||
+                    reviewResult?.githubCandidates ||
+                    reviewResult?.github_candidates ||
+                    [];
+
+                if (githubCandidates.length > 0) {
+                    setGithubPopup(true);
+                }
 
                 // ======================================================
                 // UPDATE USAGE
@@ -578,7 +615,12 @@ const Review = () => {
                 // REFRESH HISTORY
                 // ======================================================
 
-                await fetchHistory();
+                fetchHistory().catch((err) => {
+                    console.error(
+                        "Unable to refresh review history:",
+                        err
+                    );
+                });
 
                 // ======================================================
                 // SCROLL TO RESULT
@@ -725,6 +767,93 @@ const Review = () => {
     };
 
     // ==========================================================
+    // GITHUB ISSUES POPUP
+    // ==========================================================
+
+    const handleReviewGithubIssues = () => {
+        setGithubPopup(false);
+
+        setTimeout(() => {
+            githubIssuesRef.current?.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+            });
+        }, 150);
+    };
+
+    // ==========================================================
+    // CREATE GITHUB ISSUES
+    // ==========================================================
+
+    const handleAddIssuesToGithub = async () => {
+        if (!reviewId) {
+            setError("Review ID is missing.");
+            return;
+        }
+
+        if (githubCreating || githubIssuesCreated) {
+            return;
+        }
+
+        const token = getToken();
+
+        if (!token) {
+            setIsLoggedIn(false);
+            setAuthPopup(true);
+            return;
+        }
+
+        try {
+            setGithubCreating(true);
+            setError("");
+
+            const response = await axios.post(
+                `${API_URL}/api/review/${reviewId}/github-issues`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (response.data?.success) {
+                console.log(
+                    "GitHub issues created:",
+                    response.data.issues
+                );
+
+                setGithubCreatedIssues(
+                    response.data.issues || []
+                );
+
+                setGithubIssuesCreated(true);
+            }
+        } catch (err) {
+            console.error(
+                "Failed to create GitHub issues:",
+                err.response?.data || err.message
+            );
+
+            if (
+                err.response?.status === 401 ||
+                err.response?.status === 403
+            ) {
+                clearAuthData();
+                setAuthPopup(true);
+                return;
+            }
+
+            setError(
+                err.response?.data?.message ||
+                "Unable to create GitHub issues."
+            );
+        } finally {
+            setGithubCreating(false);
+        }
+    };
+
+    // ==========================================================
     // NEW REVIEW
     // ==========================================================
 
@@ -732,6 +861,11 @@ const Review = () => {
         setResult(null);
         setError("");
         setRepoUrl("");
+        setReviewId(null);
+        setGithubPopup(false);
+        setGithubCreating(false);
+        setGithubIssuesCreated(false);
+        setGithubCreatedIssues([]);
 
         window.scrollTo({
             top: 0,
@@ -1291,6 +1425,130 @@ const Review = () => {
                                 result={result}
                             />
 
+                            {/* ======================================================
+                                GITHUB ISSUES SECTION
+                            ======================================================= */}
+
+                            {(
+                                result?.githubCandidates?.length > 0 ||
+                                result?.github_candidates?.length > 0
+                            ) && (
+                                    <div
+                                        ref={githubIssuesRef}
+                                        className="
+                                        mt-12
+                                        rounded-2xl
+                                        border
+                                        border-white/[0.08]
+                                        bg-white/[0.02]
+                                        p-6
+                                        sm:p-7
+                                    "
+                                    >
+                                        <div>
+                                            <div
+                                                className="
+                                                text-[10px]
+                                                uppercase
+                                                tracking-[0.18em]
+                                                text-white/25
+                                            "
+                                            >
+                                                GitHub Issues
+                                            </div>
+
+                                            <h3
+                                                className="
+                                                mt-2
+                                                text-[22px]
+                                                font-medium
+                                                tracking-[-0.03em]
+                                            "
+                                            >
+                                                Critical issues found
+                                            </h3>
+
+                                            <p
+                                                className="
+                                                mt-2
+                                                text-[13px]
+                                                leading-6
+                                                text-white/35
+                                            "
+                                            >
+                                                CodeLens found critical findings
+                                                that can be added to your GitHub
+                                                repository as issues.
+                                            </p>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            disabled={
+                                                githubCreating ||
+                                                githubIssuesCreated
+                                            }
+                                            className={`
+                                            mt-6
+                                            w-full
+                                            h-11
+                                            rounded-xl
+                                            text-[12px]
+                                            font-medium
+                                            transition
+                                            ${
+                                                githubIssuesCreated
+                                                    ? "bg-white/10 text-white/40 cursor-not-allowed"
+                                                    : githubCreating
+                                                    ? "bg-white/10 text-white/40 cursor-wait"
+                                                    : "bg-[#eeeae1] text-[#080b09] hover:bg-white"
+                                            }
+                                        `}
+                                            onClick={handleAddIssuesToGithub}
+                                        >
+                                            {githubCreating
+                                                ? "Creating GitHub Issues..."
+                                                : githubIssuesCreated
+                                                ? "Issues Added to GitHub"
+                                                : "Add Issues to GitHub"}
+                                        </button>
+
+                                        {githubIssuesCreated &&
+                                            githubCreatedIssues.length > 0 && (
+                                                <div className="mt-5 space-y-2">
+                                                    <div className="text-[10px] uppercase tracking-[0.15em] text-white/25">
+                                                        Created Issues
+                                                    </div>
+
+                                                    {githubCreatedIssues.map((issue) => (
+                                                        <a
+                                                            key={issue.number}
+                                                            href={issue.url}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="
+                                                                block
+                                                                rounded-xl
+                                                                border
+                                                                border-white/[0.07]
+                                                                bg-white/[0.025]
+                                                                px-4
+                                                                py-3
+                                                                text-[12px]
+                                                                text-white/60
+                                                                hover:text-white
+                                                                hover:bg-white/[0.05]
+                                                                transition
+                                                            "
+                                                        >
+                                                            #{issue.number} · {issue.title}
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            )}
+                                    </div>
+                                )}
+
                         </div>
 
                     </section>
@@ -1317,6 +1575,171 @@ const Review = () => {
                 )}
 
             </main>
+            {/* ======================================================
+          GITHUB ISSUES POPUP
+      ======================================================= */}
+
+            {githubPopup && (
+                <div
+                    className="
+                        fixed
+                        inset-0
+                        z-[110]
+                        flex
+                        items-center
+                        justify-center
+                        p-5
+                    "
+                >
+                    {/* Overlay */}
+                    <button
+                        type="button"
+                        aria-label="Close"
+                        onClick={() => setGithubPopup(false)}
+                        className="
+                            absolute
+                            inset-0
+                            bg-[#121213]/65
+                            backdrop-blur-sm
+                            cursor-default
+                        "
+                    />
+
+                    {/* Modal */}
+                    <div
+                        className="
+                            relative
+                            w-full
+                            max-w-[460px]
+                            rounded-[26px]
+                            border
+                            border-white/[0.09]
+                            bg-[#0c100e]
+                            shadow-2xl
+                            p-7
+                            sm:p-8
+                        "
+                    >
+                        {/* Close */}
+                        <button
+                            type="button"
+                            onClick={() => setGithubPopup(false)}
+                            className="
+                                absolute
+                                top-4
+                                right-4
+                                w-8
+                                h-8
+                                rounded-lg
+                                flex
+                                items-center
+                                justify-center
+                                text-white/30
+                                hover:text-white
+                                hover:bg-white/[0.05]
+                                transition
+                            "
+                        >
+                            <CloseIcon size={16} />
+                        </button>
+
+                        {/* Icon */}
+                        <div
+                            className="
+                                w-12
+                                h-12
+                                rounded-2xl
+                                border
+                                border-white/[0.08]
+                                bg-white/[0.035]
+                                flex
+                                items-center
+                                justify-center
+                                text-white/75
+                                mb-5
+                            "
+                        >
+                            <SparkIcon size={21} />
+                        </div>
+
+                        <div
+                            className="
+                                text-[10px]
+                                uppercase
+                                tracking-[0.18em]
+                                text-white/25
+                            "
+                        >
+                            CodeLens found critical issues
+                        </div>
+
+                        <h3
+                            className="
+                                mt-2
+                                text-[27px]
+                                font-medium
+                                tracking-[-0.04em]
+                            "
+                        >
+                            Create GitHub Issues?
+                        </h3>
+
+                        <p
+                            className="
+                                mt-3
+                                text-[13px]
+                                leading-6
+                                text-white/35
+                            "
+                        >
+                            CodeLens found critical issues that can be
+                            added to your GitHub repository as issues.
+                        </p>
+
+                        {/* Buttons */}
+                        <div className="mt-7 space-y-2.5">
+                            <button
+                                type="button"
+                                onClick={handleReviewGithubIssues}
+                                className="
+                                    w-full
+                                    h-11
+                                    rounded-xl
+                                    bg-[#eeeae1]
+                                    text-[#080b09]
+                                    text-[12px]
+                                    font-medium
+                                    hover:bg-white
+                                    transition
+                                "
+                            >
+                                Review GitHub Issues
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setGithubPopup(false)}
+                                className="
+                                    w-full
+                                    h-11
+                                    rounded-xl
+                                    border
+                                    border-white/[0.09]
+                                    bg-white/[0.025]
+                                    text-white/60
+                                    text-[12px]
+                                    hover:text-white
+                                    hover:bg-white/[0.05]
+                                    transition
+                                "
+                            >
+                                Maybe later
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ======================================================
           AUTH POPUP
       ======================================================= */}

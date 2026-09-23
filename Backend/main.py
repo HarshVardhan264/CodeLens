@@ -36,11 +36,12 @@ def review_code(request: ReviewRequest):
     ]
 
     result = review_graph.invoke({
-        "chunks": chunks,
-        "bug_results": "",
-        "security_results": "",
-        "quality_results": "",
-        "final_report": {}
+    "chunks": chunks,
+    "bug_results": "",
+    "security_results": "",
+    "quality_results": "",
+    "final_report": {},
+    "github_candidates": []
     })
 
     return {

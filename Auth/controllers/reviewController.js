@@ -3,21 +3,18 @@ const Review = require("../models/Review");
 
 const reviewRepository = require("../services/codeReviewService");
 
+const {
+    createGitHubIssues,
+} = require("../services/githubService");
+
 const FREE_REVIEW_LIMIT = 4;
 
-
-// ============================================================
-// CREATE REVIEW
-// ============================================================
-
+// Create a new AI code review
 const createReview = async (req, res) => {
     try {
         const { repoUrl } = req.body;
 
-        // --------------------------------------------------------
         // Validate repository URL
-        // --------------------------------------------------------
-
         if (!repoUrl || !repoUrl.trim()) {
             return res.status(400).json({
                 success: false,
@@ -27,10 +24,7 @@ const createReview = async (req, res) => {
 
         const cleanRepoUrl = repoUrl.trim();
 
-        // --------------------------------------------------------
         // Get authenticated user
-        // --------------------------------------------------------
-
         const user = await User.findById(req.user._id);
 
         if (!user) {
@@ -40,16 +34,7 @@ const createReview = async (req, res) => {
             });
         }
 
-        // --------------------------------------------------------
-        // Check Free plan limit
-        //
-        // Free users:
-        //     4 reviews maximum
-        //
-        // Pro users:
-        //     Unlimited reviews
-        // --------------------------------------------------------
-
+        // Check free review limit
         if (
             user.plan === "free" &&
             user.reviewsUsed >= FREE_REVIEW_LIMIT
@@ -67,20 +52,16 @@ const createReview = async (req, res) => {
             });
         }
 
-        // --------------------------------------------------------
         // Run CodeLens AI review
-        // --------------------------------------------------------
-
         console.log(
             `Starting review for user: ${user.email}`
         );
 
-        const result = await reviewRepository(cleanRepoUrl);
+        const result = await reviewRepository(
+            cleanRepoUrl
+        );
 
-        // --------------------------------------------------------
         // Validate AI result
-        // --------------------------------------------------------
-
         if (!result || !result.report) {
             console.error(
                 "Invalid review result:",
@@ -94,10 +75,7 @@ const createReview = async (req, res) => {
             });
         }
 
-        // --------------------------------------------------------
         // Save completed review
-        // --------------------------------------------------------
-
         const review = await Review.create({
             user: user._id,
             repoUrl: cleanRepoUrl,
@@ -105,22 +83,13 @@ const createReview = async (req, res) => {
             status: "completed",
         });
 
-        // --------------------------------------------------------
-        // Increase Free usage
-        //
-        // IMPORTANT:
-        // Pro users do NOT consume review credits.
-        // --------------------------------------------------------
-
+        // Increase free usage
         if (user.plan === "free") {
             user.reviewsUsed += 1;
             await user.save();
         }
 
-        // --------------------------------------------------------
-        // Response
-        // --------------------------------------------------------
-
+        // Return review result
         return res.status(201).json({
             success: true,
 
@@ -153,18 +122,79 @@ const createReview = async (req, res) => {
     }
 };
 
+// Create approved GitHub issues
+const createReviewGithubIssues = async (req, res) => {
+    try {
+        const { id } = req.params;
 
-// ============================================================
-// REVIEW HISTORY
-// ============================================================
+        // Find review belonging to authenticated user
+        const review = await Review.findOne({
+            _id: id,
+            user: req.user._id,
+        });
 
+        if (!review) {
+            return res.status(404).json({
+                success: false,
+                message: "Review not found",
+            });
+        }
+
+        // Get AI-selected GitHub candidates
+        const issues =
+            review.result?.githubCandidates || [];
+
+        // Check if candidates exist
+        if (issues.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "No GitHub issues available to create",
+            });
+        }
+
+        // Create issues on GitHub
+        const createdIssues =
+            await createGitHubIssues(
+                review.repoUrl,
+                issues
+            );
+
+        // Return created issues
+        return res.status(201).json({
+            success: true,
+            message:
+                "GitHub issues created successfully",
+            issues: createdIssues,
+        });
+
+    } catch (error) {
+        console.error(
+            "GitHub issue creation error:",
+            error.response?.data ||
+                error.message
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                "Unable to create GitHub issues",
+        });
+    }
+};
+
+// Get review history
 const getReviewHistory = async (req, res) => {
     try {
         const reviews = await Review.find({
             user: req.user._id,
         })
-            .select("_id repoUrl status createdAt")
-            .sort({ createdAt: -1 });
+            .select(
+                "_id repoUrl status createdAt"
+            )
+            .sort({
+                createdAt: -1,
+            });
 
         return res.json({
             success: true,
@@ -172,20 +202,20 @@ const getReviewHistory = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("History error:", error);
+        console.error(
+            "History error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
-            message: "Unable to fetch review history",
+            message:
+                "Unable to fetch review history",
         });
     }
 };
 
-
-// ============================================================
-// SINGLE REVIEW
-// ============================================================
-
+// Get a single review
 const getReviewById = async (req, res) => {
     try {
         const review = await Review.findOne({
@@ -206,22 +236,23 @@ const getReviewById = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Get review error:", error);
+        console.error(
+            "Get review error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
-            message: "Unable to fetch review",
+            message:
+                "Unable to fetch review",
         });
     }
 };
 
-
-// ============================================================
-// EXPORTS
-// ============================================================
-
+// Export controller functions
 module.exports = {
     createReview,
+    createReviewGithubIssues,
     getReviewHistory,
     getReviewById,
 };
