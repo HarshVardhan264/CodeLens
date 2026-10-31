@@ -18,13 +18,9 @@ import { Link } from "react-router-dom";
 // CONFIG
 // ============================================================
 
-const API_URL = "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const FREE_REVIEW_LIMIT = 4;
 
-// ============================================================
-// LENS ICON
-// Same CodeLens logo used in Navbar
-// ============================================================
 
 const Lens = ({ size = "0.78em" }) => (
     <svg

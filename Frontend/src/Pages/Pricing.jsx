@@ -192,7 +192,7 @@ const Pricing = () => {
             // ----------------------------------------------------
 
             const response = await fetch(
-                "http://localhost:5000/api/payment/create-order",
+                `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/payment/create-order`,
                 {
                     method: "POST",
 
@@ -257,7 +257,7 @@ const Pricing = () => {
 
                         const verifyResponse =
                             await fetch(
-                                "http://localhost:5000/api/payment/verify",
+                                `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/payment/verify`,
                                 {
                                     method: "POST",
 

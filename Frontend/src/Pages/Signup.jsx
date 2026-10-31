@@ -458,7 +458,7 @@ export default function Signup() {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/auth/signup",
+        `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/auth/signup`,
         {
           name: name.trim(),
           email: email.trim(),

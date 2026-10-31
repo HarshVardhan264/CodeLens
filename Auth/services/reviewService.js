@@ -8,7 +8,7 @@ async function sendCodeForReview(chunks) {
 
     try {
         const response = await axios.post(
-            "http://127.0.0.1:8000/review",
+            `${process.env.AI_SERVICE_URL || "http://127.0.0.1:8000"}/review`,
             { chunks },
             { timeout: 120000 } // 2 minutes
         );
