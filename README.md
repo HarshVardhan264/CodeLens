@@ -716,6 +716,7 @@ Current planned pricing:
 CodeLens Pro
 $20
 ```
+IT is now connected to Razorpay 
 
 The payment interface can later be connected to:
 

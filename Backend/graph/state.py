@@ -14,3 +14,4 @@ class ReviewState(TypedDict):
 
     # Critical issues selected for possible GitHub Issue creation
     github_candidates: List[Dict[str, Any]]
+

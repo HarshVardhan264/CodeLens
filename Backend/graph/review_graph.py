@@ -76,10 +76,10 @@ graph.add_edge(START, "security_agent")
 graph.add_edge(START, "quality_agent")
 
 
-graph.add_edge("bug_agent", "final_agent")
-graph.add_edge("security_agent", "final_agent")
-graph.add_edge("quality_agent", "final_agent")
-
+graph.add_edge(
+    ["bug_agent", "security_agent", "quality_agent"],
+    "final_agent"
+)
 
 graph.add_edge("final_agent", "prioritize_findings")
 
