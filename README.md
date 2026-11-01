@@ -2,352 +2,219 @@
 
 ### Autonomous AI-Powered Code Review Platform
 
-CodeLens is an AI-powered code intelligence platform that analyzes software repositories and identifies **bugs, security vulnerabilities, and code-quality issues**.
+CodeLens is an AI-powered code intelligence platform that analyzes GitHub repositories to identify potential bugs, security vulnerabilities, and code-quality issues.
 
-Instead of relying on a single AI reviewer, CodeLens uses multiple specialized AI agents to analyze code from different perspectives and combines their findings into a structured code-review report.
+Instead of relying on a single AI reviewer, CodeLens uses multiple specialized AI agents to analyze code from different perspectives and combines their findings into a structured review report.
+
+**Live Application:** https://code-lens-rose.vercel.app/
 
 ---
 
 ## ✨ What is CodeLens?
 
-CodeLens helps developers understand what is wrong with their code, why it matters, and how it can be improved.
+CodeLens helps developers understand what may be wrong with their code, why it matters, and how it can be improved.
 
-A developer can provide a **GitHub repository URL**, and CodeLens:
+A developer submits a GitHub repository URL, and CodeLens:
 
 1. Connects to the GitHub repository.
-2. Retrieves the repository files.
-3. Filters unnecessary files.
-4. Selects the most important source files.
+2. Retrieves repository files using the GitHub API.
+3. Filters unnecessary files and directories.
+4. Selects relevant source files.
 5. Splits large files into manageable code chunks.
-6. Sends the code to the AI review system.
+6. Sends the code to the Python AI backend.
 7. Runs multiple specialized AI agents.
 8. Combines their findings.
-9. Generates a structured review report.
+9. Generates a structured code-review report.
 
 ### AI Review Agents
 
-| Agent             | Responsibility                                              |
-| ----------------- | ----------------------------------------------------------- |
-| 🐞 Bug Agent      | Detects logical errors, runtime problems and potential bugs |
-| 🔐 Security Agent | Detects security vulnerabilities and unsafe practices       |
-| ✨ Quality Agent   | Evaluates readability, maintainability and code quality     |
-| 🧠 Final Agent    | Combines all findings into one structured report            |
+| Agent | Responsibility |
+|---|---|
+| 🐞 Bug Agent | Detects logical errors, runtime problems, and potential bugs |
+| 🔐 Security Agent | Identifies security vulnerabilities and unsafe practices |
+| ✨ Quality Agent | Evaluates readability, maintainability, and code quality |
+| 🧠 Final Agent | Combines findings into a structured report |
 
 ---
 
-# 🏗️ Project Architecture
+## 🏗️ System Architecture
 
-CodeLens is divided into three major parts:
+CodeLens consists of three main services:
 
-```text
-                         ┌──────────────────────┐
-                         │      CodeLens        │
-                         └──────────┬───────────┘
-                                    │
-                 ┌──────────────────┼──────────────────┐
-                 │                  │                  │
-                 ▼                  ▼                  ▼
-          ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-          │  Frontend   │    │    Auth     │    │   Backend   │
-          │ React       │    │ Node/Express│    │ Python/AI   │
-          │ Tailwind    │    │ MongoDB     │    │ LangGraph   │
-          └──────┬──────┘    └──────┬──────┘    └──────┬──────┘
-                 │                  │                  │
-                 │                  │                  │
-                 └──────────────────┼──────────────────┘
-                                    │
-                                    ▼
-                            ┌───────────────┐
-                            │ GitHub API    │
-                            └───────────────┘
-```
+| Service | Technology | Responsibility |
+|---|---|---|
+| Frontend | React, Vite, Tailwind CSS | User interface and review results |
+| Auth / Application API | Node.js, Express, MongoDB | Authentication, repository processing, and application APIs |
+| AI Backend | Python, FastAPI, LangGraph | Multi-agent AI code analysis |
 
-### Request Flow
+### Architecture Overview
 
 ```text
-User
- │
- ▼
-React Frontend
- │
- │ HTTP Request
- ▼
-Node.js / Express
- │
- ├── Authentication
- │
- ├── MongoDB
- │
- ├── GitHub Repository
- │
- └── Repository Processing
-        │
-        ▼
-Python AI Backend
-        │
-        ▼
-     LangGraph
-        │
-   ┌────┼────┐
-   ▼    ▼    ▼
- Bug  Security Quality
-   │    │    │
-   └────┼────┘
-        ▼
-   Final Agent
-        │
-        ▼
- Structured Report
-        │
-        ▼
- React Frontend
+                    USER
+                      |
+                      v
+             +------------------+
+             |  React Frontend  |
+             |   Vite + Nginx   |
+             +--------+---------+
+                      |
+                      | HTTP API
+                      v
+             +------------------+
+             |  Node.js /       |
+             |  Express Auth    |
+             +--------+---------+
+                      |
+          +-----------+-----------+
+          |           |           |
+          v           v           v
+       MongoDB     GitHub API   JWT Auth
+                      |
+                      v
+              Repository Files
+                      |
+                      v
+              File Processing
+          (Filtering, Selection,
+                Chunking)
+                      |
+                      v
+             +------------------+
+             | Python FastAPI   |
+             +--------+---------+
+                      |
+                      v
+                 LangGraph
+                      |
+          +-----------+-----------+
+          |           |           |
+          v           v           v
+        Bug       Security     Quality
+       Agent       Agent        Agent
+          |           |           |
+          +-----------+-----------+
+                      |
+                      v
+                 Final Agent
+                      |
+                      v
+              Structured Report
+                      |
+                      v
+              React Frontend
 ```
 
 ---
 
-# 📁 Project Structure
+## 📁 Project Structure
+
+The repository is organized as a monorepo containing three independent applications.
 
 ```text
-CodeLens/
+Code reviewer/
 │
-├── frontend/
-│   │
+├── Frontend/
 │   ├── public/
-│   │
 │   ├── src/
-│   │   ├── assets/
-│   │   │
-│   │   ├── components/
-│   │   │   ├── about/
-│   │   │   └── Navbar.jsx
-│   │   │
-│   │   ├── pages/
-│   │   │   ├── Home.jsx
-│   │   │   ├── About.jsx
-│   │   │   ├── Contact.jsx
-│   │   │   ├── Login.jsx
-│   │   │   ├── Signup.jsx
-│   │   │   └── Review.jsx
-│   │   │
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   └── index.css
-│   │
 │   ├── package.json
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   └── README.md
+│   ├── Dockerfile
+│   └── .dockerignore
 │
-│
-├── auth/
-│   │
+├── Auth/
 │   ├── config/
-│   │   └── db.js
-│   │
 │   ├── controllers/
-│   │   ├── authController.js
-│   │   └── reviewController.js
-│   │
 │   ├── middleware/
-│   │   └── authMiddleware.js
-│   │
 │   ├── models/
-│   │   ├── User.js
-│   │   └── Review.js
-│   │
 │   ├── routes/
-│   │   ├── authRoutes.js
-│   │   └── reviewRoutes.js
-│   │
 │   ├── Services/
-│   │   ├── codeReviewService.js
-│   │   ├── githubService.js
-│   │   ├── fileChunker.js
-│   │   ├── fileFilter.js
-│   │   ├── fileSelector.js
-│   │   └── reviewService.js
-│   │
-│   ├── .env
 │   ├── app.js
 │   ├── package.json
-│   └── README.md
+│   ├── Dockerfile
+│   └── .dockerignore
 │
-│
-├── backend/
-│   │
+├── Backend/
 │   ├── agents/
-│   │   ├── bug_agent.py
-│   │   ├── security_agent.py
-│   │   ├── quality_agent.py
-│   │   └── final_agent.py
-│   │
 │   ├── graph/
-│   │   └── review_graph.py
-│   │
 │   ├── main.py
-│   │
 │   ├── requirements.txt
-│   └── README.md
+│   ├── Dockerfile
+│   └── .dockerignore
 │
-│
+├── docker-compose.yml
+├── .gitignore
 └── README.md
 ```
 
-> Folder and file names can be adjusted to match the exact implementation.
+*The directory listing above highlights the main application components and Docker configuration files.*
 
 ---
 
-# 🎨 Frontend
+## 🎨 Frontend
 
-The frontend provides the user interface for CodeLens.
+The `Frontend` directory contains the user-facing React application.
 
 ### Technologies
 
-* React
-* Vite
-* Tailwind CSS
-* JavaScript
-* React Router
-* Axios
-* GSAP
-* GSAP ScrollTrigger
-* Motion
+- React
+- Vite
+- JavaScript
+- Tailwind CSS
+- React Router
+- Axios
+- GSAP
+- GSAP ScrollTrigger
+- Motion
 
 ### Responsibilities
 
-The frontend handles:
+- Landing page and application navigation
+- User registration and login interfaces
+- Repository submission
+- Review results and issue visualization
+- User profile and review history
+- Usage information and upgrade interface
+- Responsive UI and animations
 
-* Landing page
-* About page
-* Contact page
-* Login
-* Signup
-* Repository review interface
-* Review results
-* User profile
-* Review history
-* Usage information
-* Upgrade interface
-* Animations
-* Responsive UI
-
-### Frontend Flow
-
-```text
-User
-  │
-  ▼
-React Application
-  │
-  ├── Login / Signup
-  │
-  ├── Home
-  │
-  ├── Repository Review
-  │
-  └── Review Results
-          │
-          ▼
-      Axios API Request
-          │
-          ▼
-       Auth Server
-```
+The frontend communicates with the Node.js application API using Axios.
 
 ---
 
-# 🔐 Authentication Server
+## 🔐 Authentication and Application Backend
 
-The `auth` folder contains the Node.js/Express backend responsible for authentication and application-level API operations.
+The `Auth` directory contains the Node.js and Express application server.
 
 ### Technologies
 
-* Node.js
-* Express.js
-* MongoDB
-* Mongoose
-* JWT
-* Axios
-* CORS
-* Cookie Parser
-* dotenv
+- Node.js
+- Express.js
+- MongoDB
+- Mongoose
+- JWT
+- Axios
+- CORS
+- Cookie Parser
+- dotenv
 
 ### Responsibilities
 
-The authentication server handles:
+- User registration and login
+- Password hashing and JWT authentication
+- Protected API routes
+- User and review data management
+- Review usage limits
+- Review history
+- GitHub repository processing
+- Communication with the Python AI backend
 
-* User registration
-* User login
-* JWT authentication
-* User sessions
-* Protected routes
-* MongoDB user data
-* Review usage
-* Review history
-* GitHub repository processing
-* Communication with the Python AI backend
+The Auth service handles application-level operations and forwards code-review requests to the AI backend.
 
 ---
 
-# 👤 Authentication Flow
+## 🗄️ MongoDB
 
-### Signup
+MongoDB stores application data, including user information and review history.
 
-```text
-User
- │
- ▼
-Signup Form
- │
- ▼
-Express API
- │
- ▼
-Validate User
- │
- ▼
-Hash Password
- │
- ▼
-MongoDB
- │
- ▼
-Create Account
-```
-
-### Login
-
-```text
-User
- │
- ▼
-Login Form
- │
- ▼
-Express API
- │
- ▼
-Find User
- │
- ▼
-Verify Password
- │
- ▼
-Generate JWT
- │
- ▼
-Authenticated User
-```
-
-JWT authentication is used to protect review-related operations.
-
----
-
-# 🗄️ MongoDB
-
-MongoDB stores application data such as:
-
-### User
+### User Data
 
 ```text
 User
@@ -359,7 +226,7 @@ User
 └── reviewHistory
 ```
 
-### Review
+### Review Data
 
 ```text
 Review
@@ -372,121 +239,106 @@ Review
 └── createdAt
 ```
 
-MongoDB allows CodeLens to maintain review history and enforce usage limits from the backend.
+The backend maintains review history and enforces usage limits.
 
 ---
 
-# 🐍 Python AI Backend
+## 🐍 Python AI Backend
 
-The `backend` folder contains the AI code-review system.
+The `Backend` directory contains the AI-powered code-review engine.
 
 ### Technologies
 
-* Python
-* FastAPI
-* LangChain
-* LangGraph
-* Google Gemini
-* Pydantic
+- Python
+- FastAPI
+- LangChain
+- LangGraph
+- Google Gemini
+- Pydantic
 
-The Python backend receives code chunks from the Node.js server and sends them through the AI review graph.
+The Python service receives code chunks from the Node.js application server and processes them through the multi-agent review workflow.
 
 ---
 
-# 🤖 Multi-Agent AI System
+## 🤖 Multi-Agent AI System
 
-CodeLens uses a multi-agent architecture.
+CodeLens uses LangGraph to orchestrate specialized AI agents.
 
 ```text
-                  Code Chunks
-                      │
-                      ▼
-               ┌──────────────┐
-               │ LangGraph    │
-               │ Review Graph │
-               └──────┬───────┘
-                      │
-          ┌───────────┼───────────┐
-          │           │           │
-          ▼           ▼           ▼
-      Bug Agent  Security Agent Quality Agent
-          │           │           │
-          └───────────┼───────────┘
-                      ▼
-                Final Agent
-                      │
-                      ▼
+                 Code Chunks
+                      |
+                      v
+              +---------------+
+              |   LangGraph   |
+              |  Review Graph |
+              +-------+-------+
+                      |
+          +-----------+-----------+
+          |           |           |
+          v           v           v
+       Bug Agent  Security Agent  Quality Agent
+          |           |           |
+          +-----------+-----------+
+                      |
+                      v
+                 Final Agent
+                      |
+                      v
                 Final Report
 ```
 
----
+### 🐞 Bug Agent
 
-# 🐞 Bug Agent
+Analyzes functional correctness and identifies:
 
-The Bug Agent focuses on functional correctness.
+- Logical errors
+- Incorrect conditions
+- Runtime problems
+- Edge cases
+- Incorrect state handling
+- Potential crashes
+- Incorrect calculations
 
-It looks for:
+### 🔐 Security Agent
 
-* Logical errors
-* Incorrect conditions
-* Runtime problems
-* Incorrect state handling
-* Edge cases
-* Potential crashes
-* Incorrect calculations
+Analyzes potential security risks, including:
 
-Example:
+- Authentication and authorization issues
+- Unsafe input handling
+- Hardcoded secrets
+- Injection vulnerabilities
+- Insecure API usage
+- Sensitive information exposure
 
-```text
-Potential bug detected:
-The function accesses an array element without
-checking whether the index exists.
-```
+### ✨ Quality Agent
 
----
+Evaluates maintainability and code quality, including:
 
-# 🔐 Security Agent
+- Poor naming
+- Duplicate code
+- Complex functions
+- Poor structure
+- Readability problems
+- Unnecessary complexity
 
-The Security Agent focuses on security vulnerabilities.
+### 🧠 Final Agent
 
-It can look for:
+Combines the findings from the specialized agents into a structured report containing:
 
-* Authentication problems
-* Authorization issues
-* Unsafe input handling
-* Hardcoded secrets
-* Injection vulnerabilities
-* Insecure API usage
-* Sensitive information exposure
+- Overall code-health score
+- Summary
+- Issue counts by severity
+- File paths and line references
+- Issue categories
+- Descriptions and suggested fixes
+- General recommendations
 
----
-
-# ✨ Quality Agent
-
-The Quality Agent evaluates the maintainability of the code.
-
-It looks for:
-
-* Poor naming
-* Duplicate code
-* Complex functions
-* Poor structure
-* Maintainability issues
-* Readability problems
-* Unnecessary complexity
-
----
-
-# 🧠 Final Agent
-
-The Final Agent combines the output of the three specialized agents.
-
-It produces a structured report containing:
+### Example Review Report
 
 ```json
 {
   "score": 75,
-  "summary": "The repository is generally healthy but contains several issues.",
+  "summary": "The repository contains several issues that should be addressed.",
   "issueCounts": {
     "critical": 0,
     "high": 1,
@@ -513,27 +365,21 @@ It produces a structured report containing:
 
 ---
 
-# 🔍 Repository Review Pipeline
+## 🔍 Repository Review Pipeline
 
-When a user submits a GitHub repository:
+When a user submits a GitHub repository, CodeLens follows this workflow:
 
-### Step 1 — Repository URL
+**1. Repository URL**
 
-```text
-https://github.com/user/project
-```
+The frontend sends the submitted repository URL to the Node.js application server.
 
-The frontend sends the repository URL to the Node.js backend.
+**2. GitHub API**
 
-### Step 2 — GitHub API
+The application server retrieves repository information and its file tree using the GitHub API.
 
-The backend retrieves the repository tree using the GitHub API.
+**3. File Filtering**
 
-### Step 3 — File Filtering
-
-Unnecessary files are removed.
-
-Examples:
+Unnecessary files and directories are excluded, such as:
 
 ```text
 node_modules/
@@ -545,28 +391,15 @@ tests/
 package-lock.json
 ```
 
-### Step 4 — File Selection
+**4. File Selection**
 
-CodeLens prioritizes important source files such as:
+CodeLens prioritizes relevant source files, including authentication, controllers, services, routes, APIs, middleware, models, and application entry points.
 
-```text
-auth
-controller
-service
-route
-api
-middleware
-model
-main
-app
-server
-```
+**5. Code Chunking**
 
-### Step 5 — Code Chunking
+Large source files are divided into manageable chunks while retaining file-path and line-number information.
 
-Large files are divided into smaller chunks.
-
-Each chunk contains:
+Example:
 
 ```json
 {
@@ -577,260 +410,373 @@ Each chunk contains:
 }
 ```
 
-### Step 6 — AI Review
+**6. AI Review**
 
-The chunks are sent to the Python AI backend.
+The chunks are sent to the Python FastAPI service.
 
-### Step 7 — Multi-Agent Analysis
+**7. Multi-Agent Analysis**
 
-The code is analyzed by:
+Bug, Security, and Quality agents analyze the code.
 
-```text
-Bug Agent
-Security Agent
-Quality Agent
-```
+**8. Final Report**
 
-### Step 8 — Final Report
+The Final Agent combines the findings into a structured report.
 
-The Final Agent combines the findings.
+**9. Results**
 
-### Step 9 — Frontend
-
-The structured report is displayed to the user.
+The Node.js server returns the report to the React frontend for display.
 
 ---
 
-# 🔄 Complete System Flow
+## 🆓 Free Review System
 
-```text
-                    USER
-                      │
-                      ▼
-             ┌─────────────────┐
-             │ React Frontend  │
-             └────────┬────────┘
-                      │
-                      │ API
-                      ▼
-             ┌─────────────────┐
-             │ Node / Express  │
-             └────────┬────────┘
-                      │
-             ┌────────┼────────┐
-             │        │        │
-             ▼        ▼        ▼
-          MongoDB  GitHub   Auth/JWT
-                      │
-                      ▼
-              Repository Files
-                      │
-                      ▼
-                File Filtering
-                      │
-                      ▼
-                File Selection
-                      │
-                      ▼
-                 Code Chunking
-                      │
-                      ▼
-             ┌─────────────────┐
-             │ Python FastAPI  │
-             └────────┬────────┘
-                      │
-                      ▼
-                 LangGraph
-                      │
-          ┌───────────┼───────────┐
-          ▼           ▼           ▼
-        BUG       SECURITY      QUALITY
-       AGENT        AGENT        AGENT
-          │           │           │
-          └───────────┼───────────┘
-                      ▼
-                 FINAL AGENT
-                      │
-                      ▼
-                JSON REPORT
-                      │
-                      ▼
-             Node.js Backend
-                      │
-                      ▼
-              React Frontend
-                      │
-                      ▼
-                USER REPORT
-```
-
----
-
-# 🆓 Free Review System
-
-CodeLens provides a limited number of free repository reviews.
-
-The current application allows:
-
-```text
-4 Free Reviews
-```
+CodeLens currently provides **4 free repository reviews**.
 
 The review count is maintained on the backend.
 
-Example:
-
 ```text
 reviewsUsed = 0
-       ↓
-     Review
-       ↓
+      |
+      v
+    Review
+      |
+      v
 reviewsUsed = 1
-       ↓
-     Review
-       ↓
+      |
+      v
+    Review
+      |
+      v
 reviewsUsed = 2
-       ↓
-     Review
-       ↓
+      |
+      v
+    Review
+      |
+      v
 reviewsUsed = 3
-       ↓
-     Review
-       ↓
+      |
+      v
+    Review
+      |
+      v
 reviewsUsed = 4
-       ↓
-   Upgrade Required
+      |
+      v
+ Upgrade Required
 ```
 
-The frontend should not be treated as the source of truth for usage limits. The authenticated backend user record should enforce the limit.
+The frontend is not treated as the source of truth for usage limits. The authenticated backend user record enforces the limit.
 
 ---
 
-# 💳 Upgrade System
+## 💳 Upgrade and Payment System
 
-After the free review limit is reached, CodeLens can display an upgrade interface.
+CodeLens includes a Pro upgrade interface and Razorpay integration.
 
-Current planned pricing:
+Current displayed pricing:
 
 ```text
 CodeLens Pro
 $20
 ```
-IT is now connected to Razorpay 
 
-The payment interface can later be connected to:
-
-* Stripe
-* Razorpay
-
-A production payment flow should verify payments on the backend using webhooks before upgrading the user's plan.
+Payment processing is integrated through Razorpay. Payment verification and plan upgrades should be performed securely on the backend, with appropriate payment verification and webhook handling.
 
 ---
 
-# ⚙️ Installation
+# 🐳 Docker Setup
 
-Clone the repository:
+CodeLens supports containerized local development using Docker and Docker Compose.
 
-```bash
-git clone <repository-url>
+Each application has its own Dockerfile:
 
-cd CodeLens
-```
+- `Frontend/Dockerfile`
+- `Auth/Dockerfile`
+- `Backend/Dockerfile`
 
-The project contains three applications that need to be configured separately.
+Each service also has a `.dockerignore` file to prevent unnecessary files, local dependencies, and environment files from being copied into its image.
 
----
+### Why Docker?
 
-# 1. Frontend Setup
+- Consistent environments across machines
+- Isolated dependencies for each service
+- Easier local setup
+- Independent service containers
+- Simplified multi-service orchestration
+- Portability across deployment environments
 
-```bash
-cd frontend
-npm install
-```
-
-Create:
+### Docker Architecture
 
 ```text
-frontend/.env
+                 Docker Compose
+                       |
+          +------------+------------+
+          |            |            |
+          v            v            v
+      Frontend        Auth       AI Backend
+       Nginx        Node.js       FastAPI
+          |            |            |
+          |            +------------+
+          |               Internal
+          |              communication
+          |
+          v
+     localhost:8080
 ```
 
-Example:
+### Prerequisites
+
+Install:
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [Git](https://git-scm.com/)
+
+Make sure Docker Desktop is running before executing Docker commands.
+
+### Environment Configuration
+
+Create the required environment files locally.
+
+**Frontend `.env`**
 
 ```env
 VITE_API_URL=http://localhost:5000
+VITE_RAZORPAY_KEY_ID=your_razorpay_key_id
 ```
 
-Start the development server:
-
-```bash
-npm run dev
-```
-
----
-
-# 2. Auth / Node.js Setup
-
-Open another terminal:
-
-```bash
-cd auth
-npm install
-```
-
-Create:
-
-```text
-auth/.env
-```
-
-Example:
+**Auth `.env`**
 
 ```env
 PORT=5000
-
 MONGO_URI=your_mongodb_connection_string
-
 JWT_SECRET=your_jwt_secret
-
-PYTHON_BACKEND_URL=http://127.0.0.1:8000
+GITHUB_TOKEN=your_github_token
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+AI_SERVICE_URL=http://ai-backend:8000
+FRONTEND_URL=http://localhost:8080
 ```
 
-Start the server:
+**Backend `.env`**
 
-```bash
-npm start
+```env
+GOOGLE_API_KEY=your_google_api_key
 ```
 
-or, if the project uses nodemon:
+Use the actual environment variables required by your application. Keep all secret values private.
+
+### Start All Services
+
+Run the following command from the project root, where `docker-compose.yml` is located:
 
 ```bash
-npm run dev
+docker compose --env-file Frontend/.env up --build -d
+```
+
+This command:
+
+- Builds the service images.
+- Creates the containers.
+- Starts the frontend, Auth, and AI backend.
+- Runs the containers in detached mode.
+
+### Access the Application
+
+| Service | Local URL |
+|---|---|
+| Frontend | http://localhost:8080 |
+| Auth API | http://localhost:5000 |
+| Python AI Backend | http://localhost:8000 |
+
+### Check Container Status
+
+```bash
+docker compose ps
+```
+
+### View Logs
+
+```bash
+docker compose logs -f
+```
+
+View logs for an individual service:
+
+```bash
+docker compose logs -f auth
+docker compose logs -f ai-backend
+docker compose logs -f frontend
+```
+
+### Stop All Services
+
+```bash
+docker compose down
+```
+
+To rebuild and restart after making changes:
+
+```bash
+docker compose --env-file Frontend/.env up --build -d
 ```
 
 ---
 
-# 3. Python Backend Setup
+# 🚀 Production Deployment
+
+CodeLens is deployed using **Vercel for the frontend** and **Render for the backend services**.
+
+### Deployment Architecture
+
+```text
+                 USERS
+                   |
+                   v
+          +------------------+
+          | Vercel           |
+          | React Frontend   |
+          +--------+---------+
+                   |
+                   v
+          +------------------+
+          | Render           |
+          | Node.js / Express|
+          +--------+---------+
+                   |
+             +-----+------+
+             |            |
+             v            v
+          MongoDB      Render
+          Atlas        Python AI
+                       Backend
+```
+
+### Live Services
+
+| Component | Platform | URL |
+|---|---|---|
+| Frontend | Vercel | https://code-lens-rose.vercel.app/ |
+| Auth / Application API | Render | https://codelens-auth.onrender.com |
+| Python AI Backend | Render | https://codelens-ai-backend-5jh1.onrender.com |
+
+### Frontend Deployment — Vercel
+
+The React application is deployed on Vercel.
+
+Configuration:
+
+- Root directory: `Frontend`
+- Build command: `npm run build`
+- Output directory: `dist`
+- Install command: `npm install`
+
+Frontend environment variables:
+
+```env
+VITE_API_URL=https://codelens-auth.onrender.com
+VITE_RAZORPAY_KEY_ID=your_razorpay_key_id
+```
+
+### Auth Deployment — Render
+
+The Node.js application is deployed as a Render web service.
+
+Configuration:
+
+- Root directory: `Auth`
+- Build command: `npm install`
+- Start command: `npm start`
+
+Important environment variables:
+
+```env
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
+GITHUB_TOKEN=your_github_token
+AI_SERVICE_URL=https://codelens-ai-backend-5jh1.onrender.com
+FRONTEND_URL=https://code-lens-rose.vercel.app
+```
+
+Render provides the service port through its `PORT` environment variable.
+
+### Python AI Backend Deployment — Render
+
+The FastAPI application is deployed as a separate Render web service.
+
+Configuration:
+
+- Root directory: `Backend`
+- Build command: `pip install -r requirements.txt`
+- Start command:
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port $PORT
+```
+
+Environment variable:
+
+```env
+GOOGLE_API_KEY=your_google_api_key
+```
+
+The backend dependencies are maintained in `Backend/requirements.txt`.
+
+### Deployment Notes
+
+- The frontend communicates with the deployed Auth API.
+- The Auth service communicates with the Python AI backend using its deployed URL.
+- MongoDB Atlas stores application data.
+- Production environment variables are configured through the respective hosting dashboards.
+- Local `.env` files are not uploaded as part of deployment configuration.
+
+---
+
+## ⚙️ Running Without Docker
+
+Docker Compose is the recommended way to start all three services locally. You can also run them individually for development.
+
+### 1. Frontend
+
+```bash
+cd Frontend
+npm install
+npm run dev
+```
+
+### 2. Auth / Node.js
 
 Open another terminal:
 
 ```bash
-cd backend
+cd Auth
+npm install
+npm start
 ```
 
-Create a virtual environment:
+### 3. Python AI Backend
 
-### Windows
+Open another terminal:
 
 ```bash
-python -m venv venv
-venv\Scripts\activate
+cd Backend
 ```
 
-### macOS / Linux
+Create and activate a virtual environment.
+
+**Windows:**
+
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+**macOS / Linux:**
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
 Install dependencies:
@@ -839,117 +785,56 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Configure environment variables if required by the AI service.
-
 Start FastAPI:
 
 ```bash
 uvicorn main:app --reload --port 8000
 ```
 
-The Python service will run on:
-
-```text
-http://127.0.0.1:8000
-```
-
----
-
-# 🚀 Running the Complete Project
-
-You need three services running.
-
-### Terminal 1 — Frontend
-
-```bash
-cd frontend
-npm run dev
-```
-
-### Terminal 2 — Auth / Node.js
-
-```bash
-cd auth
-npm run dev
-```
-
-### Terminal 3 — Python AI Backend
-
-```bash
-cd backend
-uvicorn main:app --reload --port 8000
-```
-
-The architecture becomes:
-
-```text
-Frontend
-   │
-   ▼
-Node.js / Express
-   │
-   ▼
-Python / FastAPI
-   │
-   ▼
-LangGraph AI Agents
-```
-
----
-
-# 🔑 Environment Variables
-
-Never commit secrets to GitHub.
-
-Example Node.js environment:
+Make sure the Auth service's `AI_SERVICE_URL` points to the locally running Python backend when running services outside Docker:
 
 ```env
-PORT=5000
-MONGO_URI=your_mongodb_uri
-JWT_SECRET=your_secret
-PYTHON_BACKEND_URL=http://127.0.0.1:8000
-```
-
-Example frontend:
-
-```env
-VITE_API_URL=http://localhost:5000
-```
-
-AI-related environment variables should be stored only in the Python backend environment.
-
-Add environment files to `.gitignore`:
-
-```gitignore
-.env
-.env.local
-.env.production
-venv/
-__pycache__/
-node_modules/
-dist/
+AI_SERVICE_URL=http://127.0.0.1:8000
 ```
 
 ---
 
-# 🛡️ Security
+## 🔑 Environment Variables and Secret Management
 
-CodeLens should follow basic security practices:
+CodeLens uses environment variables to configure database connections, authentication, payment processing, GitHub access, and AI model access.
 
-* Passwords must be hashed.
-* JWT secrets must remain private.
-* API keys must never be exposed to the frontend.
-* MongoDB credentials must remain in environment variables.
-* Review limits must be enforced server-side.
-* User-specific review history must require authentication.
-* GitHub repository URLs should be validated.
-* AI backend endpoints should not be publicly exposed without appropriate protection in production.
+Important practices:
+
+- Never commit `.env` files or API keys to GitHub.
+- Keep `JWT_SECRET` private.
+- Never expose `RAZORPAY_KEY_SECRET` to the frontend.
+- Keep MongoDB credentials in backend environment variables.
+- Store Google Gemini API keys only in the Python backend environment.
+- Use `VITE_` variables only for values intended to be exposed to the browser.
+- Enforce authentication and usage limits on the server.
+- Use separate environment configurations for local development and production.
+
+The project includes `.dockerignore` files for each service to keep local dependencies and environment files out of Docker build contexts.
 
 ---
 
-# 📊 Review Report
+## 🛡️ Security Considerations
 
-A CodeLens review contains:
+- Passwords should be securely hashed.
+- JWT secrets must remain private.
+- API keys must never be exposed to the frontend.
+- MongoDB credentials must remain in environment variables.
+- Review limits must be enforced server-side.
+- User-specific review history must require authentication.
+- GitHub repository URLs should be validated.
+- AI backend endpoints should be protected appropriately in production.
+- AI-generated findings should be reviewed by developers before being treated as confirmed vulnerabilities.
+
+---
+
+## 📊 Review Report
+
+Each review can include:
 
 ### Code Health Score
 
@@ -957,7 +842,7 @@ A CodeLens review contains:
 87 / 100
 ```
 
-### Issue Categories
+### Issue Severity
 
 ```text
 Critical
@@ -966,7 +851,7 @@ Medium
 Low
 ```
 
-### Each Issue Contains
+### Issue Details
 
 ```text
 File
@@ -980,147 +865,150 @@ Suggested Fix
 
 ### Recommendations
 
-The system also generates general recommendations to improve the repository.
+CodeLens also generates general recommendations to improve code quality, reliability, and security.
 
 ---
 
-# 🎯 Main Features
+## 🎯 Main Features
 
-* 🤖 Multi-agent AI code review
-* 🐞 Bug detection
-* 🔐 Security analysis
-* ✨ Code-quality analysis
-* 🧠 AI-generated recommendations
-* 📂 GitHub repository analysis
-* 🔎 Intelligent file selection
-* ✂️ Code chunking
-* 🔑 JWT authentication
-* 👤 User accounts
-* 🗄️ MongoDB persistence
-* 📜 Review history
-* 🆓 Free review allowance
-* 💳 Upgrade system
-* 🎨 Modern developer-focused UI
-* ⚡ React frontend
-* 🐍 Python AI backend
-* 🔄 LangGraph agent orchestration
-
----
-
-# 🧰 Technology Stack
-
-## Frontend
-
-| Technology   | Purpose           |
-| ------------ | ----------------- |
-| React        | UI                |
-| Vite         | Development/build |
-| Tailwind CSS | Styling           |
-| React Router | Routing           |
-| Axios        | API requests      |
-| GSAP         | Animations        |
-| Motion       | UI animations     |
-
-## Authentication / Application Backend
-
-| Technology | Purpose                    |
-| ---------- | -------------------------- |
-| Node.js    | Runtime                    |
-| Express.js | API server                 |
-| MongoDB    | Database                   |
-| Mongoose   | MongoDB ODM                |
-| JWT        | Authentication             |
-| Axios      | Service communication      |
-| CORS       | Cross-origin communication |
-| dotenv     | Environment configuration  |
-
-## AI Backend
-
-| Technology | Purpose             |
-| ---------- | ------------------- |
-| Python     | AI backend          |
-| FastAPI    | API server          |
-| LangChain  | LLM framework       |
-| LangGraph  | Agent orchestration |
-| Gemini     | AI model            |
-| Pydantic   | Data validation     |
+- 🤖 Multi-agent AI code review
+- 🐞 Potential bug detection
+- 🔐 Security analysis
+- ✨ Code-quality analysis
+- 🧠 AI-generated recommendations
+- 📂 GitHub repository analysis
+- 🔎 Intelligent file selection
+- ✂️ Code chunking
+- 🔑 JWT authentication
+- 👤 User accounts
+- 🗄️ MongoDB persistence
+- 📜 Review history
+- 🆓 Free review allowance
+- 💳 Razorpay integration
+- 🎨 Modern developer-focused UI
+- ⚡ React frontend
+- 🐍 Python AI backend
+- 🔄 LangGraph agent orchestration
+- 🐳 Dockerized services
+- 🚀 Cloud deployment using Render and Vercel
 
 ---
 
-# 📈 Future Improvements
+## 🧰 Technology Stack
+
+### Frontend
+
+| Technology | Purpose |
+|---|---|
+| React | User interface |
+| Vite | Development and build |
+| Tailwind CSS | Styling |
+| React Router | Routing |
+| Axios | API requests |
+| GSAP | Animations |
+| Motion | UI animations |
+
+### Authentication / Application Backend
+
+| Technology | Purpose |
+|---|---|
+| Node.js | Runtime |
+| Express.js | API server |
+| MongoDB | Database |
+| Mongoose | MongoDB ODM |
+| JWT | Authentication |
+| Axios | Service communication |
+| CORS | Cross-origin communication |
+| dotenv | Environment configuration |
+
+### AI Backend
+
+| Technology | Purpose |
+|---|---|
+| Python | AI backend |
+| FastAPI | API server |
+| LangChain | LLM framework |
+| LangGraph | Agent orchestration |
+| Google Gemini | Language model |
+| Pydantic | Data validation |
+
+### DevOps and Deployment
+
+| Technology | Purpose |
+|---|---|
+| Docker | Containerization |
+| Docker Compose | Multi-container orchestration |
+| Nginx | Frontend production web server |
+| Render | Backend hosting |
+| Vercel | Frontend hosting |
+| Git and GitHub | Version control and source hosting |
+
+---
+
+## 📈 Future Improvements
 
 Potential future improvements include:
 
-* Pull Request reviews
-* GitHub App integration
-* Automatic PR comments
-* Continuous code monitoring
-* Repository-wide dependency analysis
-* More specialized AI agents
-* Custom organization rules
-* Team dashboards
-* CI/CD integration
-* Slack/Discord notifications
-* Detailed code explanations
-* Automatic fix generation
-* AI-generated unit tests
-* Stripe/Razorpay payments
-* Repository comparison
-* Code-quality trends over time
+- Pull request reviews
+- GitHub App integration
+- Automatic PR comments
+- Continuous code monitoring
+- Repository-wide dependency analysis
+- More specialized AI agents
+- Custom organization rules
+- Team dashboards
+- GitHub Actions CI/CD automation
+- Slack and Discord notifications
+- Detailed code explanations
+- Automatic fix generation
+- AI-generated unit tests
+- Enhanced payment and subscription management
+- Repository comparison
+- Code-quality trends over time
 
 ---
 
-# 🧠 Why CodeLens?
+## 🧠 Why CodeLens?
 
-Traditional code review depends heavily on developers manually inspecting code.
+Traditional code review depends heavily on developers manually inspecting source code.
 
-CodeLens approaches the problem using specialized AI agents.
-
-Instead of asking one model:
-
-```text
-"Review this code."
-```
-
-CodeLens separates the task:
+CodeLens approaches the problem by separating code analysis into specialized tasks.
 
 ```text
 Is the code correct?
-        ↓
+        |
+        v
      Bug Agent
 
 Is the code secure?
-        ↓
-  Security Agent
+        |
+        v
+   Security Agent
 
 Is the code maintainable?
-        ↓
+        |
+        v
    Quality Agent
 
 What is the final assessment?
-        ↓
+        |
+        v
     Final Agent
 ```
 
-This creates a more structured approach to AI-powered code review.
+This architecture provides a structured approach to AI-powered code review, with findings consolidated into one report.
 
 ---
 
-# 📜 Development Philosophy
+## 📜 Development Philosophy
 
 CodeLens is built around three ideas:
 
-### Understand
+**Understand** — Help developers understand their code and potential problems.
 
-Help developers understand their code and its potential problems.
+**Detect** — Identify bugs, security vulnerabilities, and code-quality issues.
 
-### Detect
-
-Identify bugs, security vulnerabilities, and quality issues.
-
-### Improve
-
-Provide actionable recommendations rather than simply pointing out problems.
+**Improve** — Provide actionable recommendations rather than simply pointing out problems.
 
 ```text
 UNDERSTAND → DETECT → IMPROVE
@@ -1128,9 +1016,8 @@ UNDERSTAND → DETECT → IMPROVE
 
 ---
 
-# 👨‍💻 Author
+## 👨‍💻 Author
 
 **Harsh Vardhan**
 
 CodeLens — AI Code Intelligence Platform
-

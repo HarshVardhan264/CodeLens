@@ -1,0 +1,37 @@
+services:
+  ai-backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: codelens-ai-backend
+    env_file:
+      - ./Backend/.env
+    ports:
+      - "8000:8000"
+
+  auth:
+    build:
+      context: ./Auth
+      dockerfile: Dockerfile
+    container_name: codelens-auth
+    env_file:
+      - ./Auth/.env
+    environment:
+      AI_SERVICE_URL: http://ai-backend:8000
+    ports:
+      - "5000:5000"
+    depends_on:
+      - ai-backend
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:5000
+        VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID}
+    container_name: codelens-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - auth
