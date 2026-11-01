@@ -42,18 +42,10 @@ A developer submits a GitHub repository URL, and CodeLens:
 ### AI Review Agents
 
 | Agent | Responsibility |
-
 |---|---|
-
-| 🐞 Bug Agent | Detects logical errors, runtime problems, and
-potential bugs |
-
-| 🔐 Security Agent | Identifies security vulnerabilities and unsafe
-practices |
-
-| ✨ Quality Agent | Evaluates readability, maintainability, and code
-quality |
-
+| 🐞 Bug Agent | Detects logical errors, runtime problems, and potential bugs |
+| 🔐 Security Agent | Identifies security vulnerabilities and unsafe practices |
+| ✨ Quality Agent | Evaluates readability, maintainability, and code quality |
 | 🧠 Final Agent | Combines findings into a structured report |
 
 ---
@@ -63,17 +55,10 @@ quality |
 CodeLens consists of three main services:
 
 | Service | Technology | Responsibility |
-
 |---|---|---|
-
-| Frontend | React, Vite, Tailwind CSS | User interface and review
-results |
-
-| Auth / Application API | Node.js, Express, MongoDB |
-Authentication, repository processing, and application APIs |
-
-| AI Backend | Python, FastAPI, LangGraph | Multi-agent AI code
-analysis |
+| Frontend | React, Vite, Tailwind CSS | User interface and review results |
+| Auth / Application API | Node.js, Express, MongoDB | Authentication, repository processing, and application APIs |
+| AI Backend | Python, FastAPI, LangGraph | Multi-agent AI code analysis |
 
 ### Architecture Overview
 
@@ -988,13 +973,9 @@ This command:
 ### Access the Application
 
 | Service | Local URL |
-
 |---|---|
-
 | Frontend | http://localhost:8080 |
-
 | Auth API | http://localhost:5000 |
-
 | Python AI Backend | http://localhost:8000 |
 
 ### Check Container Status
@@ -1097,16 +1078,10 @@ CodeLens is deployed using **Vercel for the frontend** and
 ### Live Services
 
 | Component | Platform | URL |
-
 |---|---|---|
-
 | Frontend | Vercel | https://code-lens-rose.vercel.app/ |
-
-| Auth / Application API | Render |
-https://codelens-auth.onrender.com |
-
-| Python AI Backend | Render |
-https://codelens-ai-backend-5jh1.onrender.com |
+| Auth / Application API | Render | https://codelens-auth.onrender.com |
+| Python AI Backend | Render | https://codelens-ai-backend-5jh1.onrender.com |
 
 ### Frontend Deployment --- Vercel
 
@@ -1457,81 +1432,49 @@ reliability, and security.
 ### Frontend
 
 | Technology | Purpose |
-
 |---|---|
-
 | React | User interface |
-
 | Vite | Development and build |
-
 | Tailwind CSS | Styling |
-
 | React Router | Routing |
-
 | Axios | API requests |
-
 | GSAP | Animations |
-
 | Motion | UI animations |
 
 ### Authentication / Application Backend
 
 | Technology | Purpose |
-
 |---|---|
-
 | Node.js | Runtime |
-
 | Express.js | API server |
-
 | MongoDB | Database |
-
 | Mongoose | MongoDB ODM |
-
 | JWT | Authentication |
-
 | Axios | Service communication |
-
 | CORS | Cross-origin communication |
-
 | dotenv | Environment configuration |
 
 ### AI Backend
 
 | Technology | Purpose |
-
 |---|---|
-
 | Python | AI backend |
-
 | FastAPI | API server |
-
 | LangChain | LLM framework |
-
 | LangGraph | Agent orchestration |
-
 | Google Gemini | Language model |
-
 | Pydantic | Data validation |
 
 ### DevOps and Deployment
 
 | Technology | Purpose |
-
 |---|---|
-
 | Docker | Containerization |
-
 | Docker Compose | Multi-container orchestration |
-
 | Nginx | Frontend production web server |
-
 | Render | Backend hosting |
-
 | Vercel | Frontend hosting |
-
 | Git and GitHub | Version control and source hosting |
-
 ---
 
 ## 📈 Future Improvements
