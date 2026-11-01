@@ -10,41 +10,41 @@ The frontend provides the interface for authentication, repository submission, A
 
 ## ✨ Features
 
-* 🔐 **Authentication** — Login and signup interface
-* 🏠 **Landing Page** — Introduction to the CodeLens platform
-* 📖 **About Page** — Overview of how CodeLens works
-* 📩 **Contact Page** — Contact interface
-* 🔍 **Repository Review** — Submit a GitHub repository for analysis
-* 📊 **Review Results** — Display structured AI-generated findings
-* 👤 **User Profile** — Manage and view user information
-* 📜 **Review History** — Access previous repository reviews
-* 📈 **Usage Information** — Track available reviews
-* 💳 **Upgrade Interface** — Pro upgrade experience
-* ⚡ **Smooth Animations** — Interactive UI animations and transitions
-* 📱 **Responsive UI** — Designed for different screen sizes
+- 🔐 **Authentication** — Login and signup interface
+- 🏠 **Landing Page** — Introduction to the CodeLens platform
+- 📖 **About Page** — Overview of how CodeLens works
+- 📩 **Contact Page** — Contact interface
+- 🔍 **Repository Review** — Submit a GitHub repository for analysis
+- 📊 **Review Results** — Display structured AI-generated findings
+- 👤 **User Profile** — Manage and view user information
+- 📜 **Review History** — Access previous repository reviews
+- 📈 **Usage Information** — Track available reviews
+- 💳 **Upgrade Interface** — Pro upgrade experience
+- ⚡ **Smooth Animations** — Interactive UI animations and transitions
+- 📱 **Responsive UI** — Designed for different screen sizes
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Technology             | Purpose                       |
-| ---------------------- | ----------------------------- |
-| **React**              | User interface                |
-| **Vite**               | Development and build tooling |
-| **Tailwind CSS**       | Styling                       |
-| **JavaScript**         | Application logic             |
-| **React Router**       | Client-side routing           |
-| **Axios**              | API communication             |
-| **GSAP**               | Animations                    |
-| **GSAP ScrollTrigger** | Scroll-based animations       |
-| **Motion**             | UI animations                 |
+| Technology | Purpose |
+|---|---|
+| **React** | User interface |
+| **Vite** | Development and build tooling |
+| **Tailwind CSS** | Styling |
+| **JavaScript** | Application logic |
+| **React Router** | Client-side routing |
+| **Axios** | API communication |
+| **GSAP** | Animations |
+| **GSAP ScrollTrigger** | Scroll-based animations |
+| **Motion** | UI animations |
 
 ---
 
 ## 📁 Project Structure
 
 ```text
-frontend/
+Frontend/
 │
 ├── public/
 │
@@ -67,6 +67,8 @@ frontend/
 │   ├── main.jsx
 │   └── index.css
 │
+├── Dockerfile
+├── .dockerignore
 ├── package.json
 ├── vite.config.js
 ├── tailwind.config.js
@@ -108,7 +110,7 @@ The frontend communicates with the backend through API requests and displays the
 GitHub Repository URL
           │
           ▼
-     Review Page
+       Review Page
           │
           ▼
       Axios Request
@@ -122,14 +124,14 @@ GitHub Repository URL
           ▼
        LangGraph
           │
-    ┌─────┼─────┐
-    ▼     ▼     ▼
-   Bug  Security Quality
-  Agent   Agent   Agent
-    │     │     │
-    └─────┼─────┘
+     ┌────┼────┐
+     ▼    ▼    ▼
+    Bug Security Quality
+   Agent  Agent  Agent
+     │    │    │
+     └────┼────┘
           ▼
-     Final Agent
+      Final Agent
           │
           ▼
     Structured Report
@@ -146,13 +148,13 @@ CodeLens follows a modern **developer-focused interface** designed to make AI-po
 
 The frontend focuses on:
 
-* Clean visual hierarchy
-* Smooth page transitions
-* Interactive animations
-* Responsive layouts
-* Clear review information
-* Simple navigation
-* Focused developer workflows
+- Clean visual hierarchy
+- Smooth page transitions
+- Interactive animations
+- Responsive layouts
+- Clear review information
+- Simple navigation
+- Focused developer workflows
 
 ---
 
@@ -162,7 +164,7 @@ The frontend focuses on:
 
 ```bash
 git clone <repository-url>
-cd CodeLens/frontend
+cd CodeLens/Frontend
 ```
 
 ### 2. Install dependencies
@@ -173,11 +175,13 @@ npm install
 
 ### 3. Configure the API
 
-Create a `.env` file if required by the project:
+Create a `.env` file in the `Frontend` directory:
 
 ```env
 VITE_API_URL=http://localhost:5000
 ```
+
+For production, configure `VITE_API_URL` with the deployed Auth API URL in your Vercel project environment variables.
 
 ### 4. Start the development server
 
@@ -215,30 +219,108 @@ npm run preview
 
 ---
 
+## 🐳 Docker
+
+The frontend uses a multi-stage Docker build:
+
+- **Build stage:** Uses Node.js to install dependencies and generate the Vite production build.
+- **Production stage:** Uses Nginx to serve the generated static files.
+
+Build the frontend image from the project root:
+
+```bash
+docker build -t codelens-frontend ./Frontend
+```
+
+Run the container:
+
+```bash
+docker run -p 8080:80 codelens-frontend
+```
+
+Open:
+
+```text
+http://localhost:8080
+```
+
+The frontend Docker build accepts these build arguments:
+
+| Argument | Purpose |
+|---|---|
+| `VITE_API_URL` | Backend API URL |
+| `VITE_RAZORPAY_KEY_ID` | Public Razorpay key ID |
+
+Example:
+
+```bash
+docker build \
+  --build-arg VITE_API_URL=http://localhost:5000 \
+  --build-arg VITE_RAZORPAY_KEY_ID=your_public_key_id \
+  -t codelens-frontend ./Frontend
+```
+
+---
+
+## ⚙️ CI/CD
+
+CodeLens uses **GitHub Actions** for continuous integration and **Vercel** for frontend deployment.
+
+The GitHub Actions workflow is located at:
+
+```text
+.github/workflows/codelens-ci.yml
+```
+
+### CI checks
+
+| Job | Purpose |
+|---|---|
+| Frontend Build | Installs dependencies and verifies the Vite production build |
+| Auth Backend Check | Checks the Node.js Auth backend |
+| Python AI Backend Check | Compiles Python files and runs offline tests |
+| Docker Image Build | Builds Docker images for all three services |
+| Notify Vercel | Publishes a GitHub commit status after all required CI jobs pass |
+
+### Deployment flow
+
+1. Changes are pushed to the `main` branch.
+2. GitHub Actions runs the configured CI checks.
+3. The Vercel notification job runs after the required CI jobs succeed.
+4. Vercel uses the configured `Notify Vercel` deployment check before promoting the deployment to production.
+
+The frontend is deployed through Vercel:
+
+**Live Application:** https://code-lens-rose.vercel.app/
+
+The Vercel project uses the `Frontend` directory as its root directory and builds the application using:
+
+```bash
+npm install
+npm run build
+```
+
+The production output directory is:
+
+```text
+dist
+```
+
+---
+
 ## 🔌 Backend
 
 The frontend is designed to work with the CodeLens application backend.
 
 The backend handles:
 
-* Authentication
-* User accounts
-* Review history
-* GitHub repository processing
-* Communication with the Python AI backend
+- Authentication
+- User accounts
+- Review history
+- GitHub repository processing
+- Communication with the Python AI backend
 
 The frontend communicates with these services through HTTP API requests.
 
----
 
-## ⭐ Support
 
-If you find **CodeLens** interesting or useful, consider giving the repository a **⭐ Star** on GitHub.
-
-Your support helps the project gain visibility and motivates further development.
-
----
-
-<p align="center">
-  Built with ❤️ for developers who want better code.
-</p>
