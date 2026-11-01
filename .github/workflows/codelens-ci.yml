@@ -77,3 +77,36 @@ jobs:
       - name: Check Python syntax
         working-directory: Backend
         run: python -m compileall -q .
+
+
+  docker-build:
+    name: Docker Image Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Auth image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Auth
+          push: false
+
+      - name: Build AI Backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend
+          push: false
+
+      - name: Build Frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Frontend
+          push: false
+          build-args: |
+            VITE_API_URL=https://codelens-auth.onrender.com
+            VITE_RAZORPAY_KEY_ID=${{ secrets.VITE_RAZORPAY_KEY_ID }}
