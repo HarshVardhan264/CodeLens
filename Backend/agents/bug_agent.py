@@ -3,10 +3,12 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 
+from agents.llm_retry import invoke_with_retry
+
 load_dotenv()
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-3.8-flash",
+    model="gemini-2.5-flash",
     temperature=0,
     max_retries=2,
     timeout=60,
@@ -52,7 +54,10 @@ CODE CHUNKS:
     print("[BUG AGENT] Sending request to Gemini...", flush=True)
 
     try:
-        response = llm.invoke([HumanMessage(content=prompt)])
+        response = invoke_with_retry(
+            lambda: llm.invoke([HumanMessage(content=prompt)]),
+            "BUG AGENT",
+        )
 
         print(
             "[BUG AGENT] Response metadata:",

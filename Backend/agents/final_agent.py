@@ -4,10 +4,12 @@ import json
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 
+from agents.llm_retry import invoke_with_retry
+
 load_dotenv()
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-3.8-flash",
+    model="gemini-2.5-flash",
     temperature=0,
     max_output_tokens=8192,
     max_retries=2,
@@ -105,7 +107,10 @@ QUALITY FINDINGS:
     print("[FINAL AGENT] Calling Gemini...", flush=True)
 
     try:
-        response = llm.invoke(prompt)
+        response = invoke_with_retry(
+            lambda: llm.invoke(prompt),
+            "FINAL AGENT",
+        )
 
         content = response.content
 

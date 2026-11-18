@@ -3,10 +3,12 @@ import time
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 
+from agents.llm_retry import invoke_with_retry
+
 load_dotenv()
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-3.8-flash",
+    model="gemini-2.5-flash",
     temperature=0,
     max_output_tokens=4096,
     max_retries=2,
@@ -61,7 +63,10 @@ CODE CHUNKS:
     print("[SECURITY AGENT] Calling Gemini...", flush=True)
 
     try:
-        response = llm.invoke(prompt)
+        response = invoke_with_retry(
+            lambda: llm.invoke(prompt),
+            "SECURITY AGENT",
+        )
         content = response.content
 
         if not isinstance(content, str) or not content.strip():
