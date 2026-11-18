@@ -8,7 +8,7 @@ from agents.llm_retry import invoke_with_retry
 load_dotenv()
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
+    model="gemini-3.1-flash-lite",
     temperature=0,
     max_retries=2,
     timeout=60,
