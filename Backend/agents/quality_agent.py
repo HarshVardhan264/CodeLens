@@ -1,3 +1,4 @@
+
 import time
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
@@ -15,6 +16,30 @@ llm = ChatGoogleGenerativeAI(
 )
 
 
+def extract_text(response):
+    """Safely extract text from LangChain AIMessage content."""
+
+    content = response.content
+
+    if isinstance(content, str):
+        return content.strip()
+
+    if isinstance(content, list):
+        text_parts = []
+
+        for block in content:
+            if isinstance(block, str):
+                text_parts.append(block)
+            elif isinstance(block, dict):
+                text = block.get("text")
+                if isinstance(text, str):
+                    text_parts.append(text)
+
+        return "\n".join(text_parts).strip()
+
+    return ""
+
+
 def quality_agent(chunks):
 
     prompt = f"""
@@ -23,7 +48,6 @@ You are a Code Quality Review Agent.
 Analyze the following code chunks and find ONLY code quality problems.
 
 Look for:
-
 - Poor naming
 - Duplicate code
 - High complexity
@@ -64,9 +88,22 @@ CODE CHUNKS:
             lambda: llm.invoke(prompt),
             "QUALITY AGENT",
         )
-        content = response.content
 
-        if not isinstance(content, str) or not content.strip():
+        content = extract_text(response)
+
+        if not content:
+            print(
+                "[QUALITY AGENT] Empty response metadata:",
+                response.response_metadata,
+                flush=True
+            )
+
+            print(
+                "[QUALITY AGENT] Additional kwargs:",
+                response.additional_kwargs,
+                flush=True
+            )
+
             raise RuntimeError(
                 "Gemini returned an empty quality analysis"
             )
@@ -77,8 +114,11 @@ CODE CHUNKS:
             flush=True
         )
 
-        return content.strip()
+        return content
 
     except Exception as error:
-        print(f"[QUALITY AGENT] Failed: {error}", flush=True)
+        print(
+            f"[QUALITY AGENT] Failed: {error}",
+            flush=True
+        )
         raise

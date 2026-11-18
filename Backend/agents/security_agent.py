@@ -16,6 +16,30 @@ llm = ChatGoogleGenerativeAI(
 )
 
 
+def extract_text(response):
+    content = response.content
+
+    if isinstance(content, str):
+        return content.strip()
+
+    if isinstance(content, list):
+        text_parts = []
+
+        for item in content:
+            if isinstance(item, str):
+                text_parts.append(item)
+
+            elif isinstance(item, dict):
+                text = item.get("text")
+
+                if isinstance(text, str):
+                    text_parts.append(text)
+
+        return "\n".join(text_parts).strip()
+
+    return ""
+
+
 def security_agent(chunks):
 
     prompt = f"""
@@ -62,17 +86,35 @@ CODE CHUNKS:
 
     print("[SECURITY AGENT] Calling Gemini...", flush=True)
 
-    try:
-        response = invoke_with_retry(
-            lambda: llm.invoke(prompt),
-            "SECURITY AGENT",
-        )
-        content = response.content
+    def call_security_agent():
 
-        if not isinstance(content, str) or not content.strip():
-            raise RuntimeError(
-                "Gemini returned an empty security analysis"
+        response = llm.invoke(prompt)
+
+        content = extract_text(response)
+
+        if not content:
+            print(
+                "[SECURITY AGENT] Response metadata:",
+                response.response_metadata,
+                flush=True
             )
+
+            print(
+                "[SECURITY AGENT] Raw content:",
+                repr(response.content),
+                flush=True
+            )
+
+            raise RuntimeError("EMPTY_GEMINI_RESPONSE")
+
+        return content
+
+    try:
+        content = invoke_with_retry(
+            call_security_agent,
+            "SECURITY AGENT",
+            max_attempts=3
+        )
 
         print(
             f"[SECURITY AGENT] Completed in "
@@ -80,8 +122,12 @@ CODE CHUNKS:
             flush=True
         )
 
-        return content.strip()
+        return content
 
     except Exception as error:
-        print(f"[SECURITY AGENT] Failed: {error}", flush=True)
+        print(
+            f"[SECURITY AGENT] Failed after "
+            f"{time.perf_counter() - start:.2f}s: {error}",
+            flush=True
+        )
         raise

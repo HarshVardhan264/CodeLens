@@ -1,3 +1,4 @@
+
 import time
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
@@ -16,7 +17,31 @@ llm = ChatGoogleGenerativeAI(
 )
 
 
+def extract_text(response):
+    content = response.content
+
+    if isinstance(content, str):
+        return content.strip()
+
+    if isinstance(content, list):
+        text_parts = []
+
+        for item in content:
+            if isinstance(item, str):
+                text_parts.append(item)
+
+            elif isinstance(item, dict):
+                text = item.get("text")
+                if isinstance(text, str):
+                    text_parts.append(text)
+
+        return "\n".join(text_parts).strip()
+
+    return ""
+
+
 def bug_agent(chunks):
+
     prompt = f"""
 You are a Bug Detection Agent.
 
@@ -53,34 +78,37 @@ CODE CHUNKS:
 
     print("[BUG AGENT] Sending request to Gemini...", flush=True)
 
-    try:
-        response = invoke_with_retry(
-            lambda: llm.invoke([HumanMessage(content=prompt)]),
-            "BUG AGENT",
+    def call_bug_agent():
+
+        response = llm.invoke(
+            [HumanMessage(content=prompt)]
         )
 
-        print(
-            "[BUG AGENT] Response metadata:",
-            response.response_metadata,
-            flush=True
-        )
-
-        content = response.content
-
-        if isinstance(content, str):
-            content = content.strip()
-
-        elif isinstance(content, list):
-            content = "\n".join(
-                item.get("text", "")
-                for item in content
-                if isinstance(item, dict) and item.get("text")
-            ).strip()
+        content = extract_text(response)
 
         if not content:
-            raise RuntimeError(
-                "Gemini returned empty content. Check response metadata."
+            print(
+                "[BUG AGENT] Empty response metadata:",
+                response.response_metadata,
+                flush=True
             )
+
+            print(
+                "[BUG AGENT] Raw response:",
+                repr(response.content),
+                flush=True
+            )
+
+            raise RuntimeError("EMPTY_GEMINI_RESPONSE")
+
+        return content
+
+    try:
+        content = invoke_with_retry(
+            call_bug_agent,
+            "BUG AGENT",
+            max_attempts=3
+        )
 
         print(
             f"[BUG AGENT] Completed in "
