@@ -10,7 +10,9 @@ async function sendCodeForReview(chunks) {
         const response = await axios.post(
             `${process.env.AI_SERVICE_URL || "http://127.0.0.1:8000"}/review`,
             { chunks },
-            { timeout: 120000 } // 2 minutes
+            // The AI workflow runs three specialist analyses and a final
+            // synthesis, so two minutes is not enough for larger repositories.
+            { timeout: 700000 } // 5 minutes
         );
 
         console.log("FastAPI response received!");
